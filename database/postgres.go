@@ -42,7 +42,9 @@ func NewConnectPostgres(config *config.Config) *gorm.DB {
 	sqlDB.SetConnMaxIdleTime(10 * time.Minute)
 	sqlDB.SetConnMaxLifetime(60 * time.Minute)
 
-	log.Info("🚀 connected successfully to the database")
+	log.Info("🐝 connected successfully to the database")
+
+	Migration(db)
 
 	return db
 }
