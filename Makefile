@@ -1,3 +1,24 @@
+ifneq (,$(wildcard .env.local))
+	include .env.local
+	export
+endif
+
+.PHONY: dbstart
+dbstart: ## start the database server
+	docker compose -f docker-compose.yml --env-file ./.env.local up --build
+
+.PHONY: dbstop
+dbstop: ## stop the database server
+	docker compose -f docker-compose.yml --env-file ./.env.local down -v
+
+.PHONY: createdb
+createdb: ## create the database
+	docker exec -it ${CONTAINER_NAME} createdb --username=${POSTGRES_USER} ${POSTGRES_DATABASE}
+
+.PHONY: dropdb
+dropdb: ## delete the database
+	docker exec -it ${CONTAINER_NAME} dropdb ${POSTGRES_DATABASE} -U ${POSTGRES_USER} 
+
 .PHONY: injection
 injection: ## generate dependency injection code using Wire
 	wire gen github.com/ariefro/buycut-api/internal/initializer
