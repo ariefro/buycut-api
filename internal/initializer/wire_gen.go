@@ -8,13 +8,24 @@ package initializer
 
 import (
 	"github.com/ariefro/buycut-api/config"
+	"github.com/ariefro/buycut-api/database"
+	"github.com/ariefro/buycut-api/internal/company"
 	"github.com/ariefro/buycut-api/internal/server"
+	"github.com/google/wire"
 )
 
 // Injectors from initializer.go:
 
 func InitializedServer() error {
 	configConfig := config.NewLoadConfig()
-	error2 := server.NewFiberServer(configConfig)
+	db := database.NewConnectPostgres(configConfig)
+	repository := company.NewRepository(db)
+	service := company.NewService(repository)
+	controller := company.NewController(service)
+	error2 := server.NewFiberServer(configConfig, controller)
 	return error2
 }
+
+// initializer.go:
+
+var companySet = wire.NewSet(company.NewRepository, company.NewService, company.NewController)
