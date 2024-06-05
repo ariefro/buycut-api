@@ -24,6 +24,7 @@ func NewConnectPostgres(config *config.Config) *gorm.DB {
 		Logger:                 logger.Default.LogMode((logger.Info)),
 		SkipDefaultTransaction: true,
 		PrepareStmt:            true,
+		TranslateError:         true,
 	})
 	if err != nil {
 		log.Error("cannot connect to database: ", err.Error())
