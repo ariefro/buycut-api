@@ -11,6 +11,7 @@ func Migration(db *gorm.DB) {
 	db.AutoMigrate(
 		&entity.Company{},
 		&entity.Product{},
+		&entity.User{},
 	)
 
 	log.Info("migrations complete...")
