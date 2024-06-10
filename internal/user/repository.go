@@ -11,6 +11,7 @@ import (
 
 type Repository interface {
 	Create(ctx context.Context, user *entity.User) error
+	FindOneByEmail(ctx context.Context, email string) (*entity.User, error)
 }
 
 type repository struct {
@@ -31,4 +32,17 @@ func (repo *repository) Create(ctx context.Context, user *entity.User) error {
 	}
 
 	return nil
+}
+
+func (repo *repository) FindOneByEmail(ctx context.Context, email string) (*entity.User, error) {
+	var user entity.User
+	if err := repo.db.WithContext(ctx).First(&user, "email = ?", email).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New(common.EmailNotRegistered)
+		}
+
+		return nil, err
+	}
+
+	return &user, nil
 }

@@ -9,6 +9,10 @@ func GenerateErrorResponse(c *fiber.Ctx, errorMessage string) error {
 	var statusCode int
 
 	switch errorMessage {
+	case common.ErrInvalidEmailOrPassword:
+		statusCode = fiber.StatusBadRequest
+	case common.EmailNotRegistered:
+		statusCode = fiber.StatusNotFound
 	case common.ErrDuplicateEntry:
 		statusCode = fiber.StatusConflict
 	default:
