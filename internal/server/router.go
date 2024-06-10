@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/ariefro/buycut-api/internal/company"
+	"github.com/ariefro/buycut-api/internal/middleware"
 	"github.com/ariefro/buycut-api/internal/user"
 	"github.com/gofiber/fiber/v2"
 )
@@ -20,5 +21,5 @@ func setupRouter(
 
 	// companies
 	companiesApi := api.Group("/companies")
-	companiesApi.Post("/", companyController.Create)
+	companiesApi.Post("/", middleware.Auth(), companyController.Create)
 }

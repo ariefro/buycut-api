@@ -11,6 +11,8 @@ func GenerateErrorResponse(c *fiber.Ctx, errorMessage string) error {
 	switch errorMessage {
 	case common.ErrInvalidEmailOrPassword:
 		statusCode = fiber.StatusBadRequest
+	case common.MissingJWT:
+		statusCode = fiber.StatusUnauthorized
 	case common.EmailNotRegistered:
 		statusCode = fiber.StatusNotFound
 	case common.ErrDuplicateEntry:
