@@ -9,6 +9,7 @@ import (
 
 type Service interface {
 	Create(ctx context.Context, input CreateCompaniesRequest) error
+	Find(ctx context.Context, input *GetCompaniesRequest) ([]*entity.Company, error)
 }
 
 type service struct {
@@ -33,4 +34,8 @@ func (s *service) Create(ctx context.Context, reqs CreateCompaniesRequest) error
 	}
 
 	return s.repo.Create(ctx, companies)
+}
+
+func (s *service) Find(ctx context.Context, input *GetCompaniesRequest) ([]*entity.Company, error) {
+	return s.repo.Find(ctx, input.Keyword)
 }

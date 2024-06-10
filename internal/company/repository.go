@@ -11,6 +11,7 @@ import (
 
 type Repository interface {
 	Create(ctx context.Context, companies []*entity.Company) error
+	Find(ctx context.Context, keyword string) ([]*entity.Company, error)
 }
 
 type repository struct {
@@ -21,8 +22,8 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db}
 }
 
-func (repo *repository) Create(ctx context.Context, companies []*entity.Company) error {
-	if err := repo.db.WithContext(ctx).Create(companies).Error; err != nil {
+func (r *repository) Create(ctx context.Context, companies []*entity.Company) error {
+	if err := r.db.WithContext(ctx).Create(companies).Error; err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			return errors.New(common.ErrDuplicateEntry)
 		}
@@ -31,4 +32,20 @@ func (repo *repository) Create(ctx context.Context, companies []*entity.Company)
 	}
 
 	return nil
+}
+
+func (r *repository) Find(ctx context.Context, keyword string) ([]*entity.Company, error) {
+	var companies []*entity.Company
+
+	query := r.db.WithContext(ctx).Model(&entity.Company{})
+
+	if keyword != "" {
+		query = query.Where("name LIKE ?", "%"+keyword+"%")
+	}
+
+	if err := query.Find(&companies).Error; err != nil {
+		return nil, err
+	}
+
+	return companies, nil
 }

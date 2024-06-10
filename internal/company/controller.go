@@ -8,6 +8,7 @@ import (
 
 type Controller interface {
 	Create(c *fiber.Ctx) error
+	Find(c *fiber.Ctx) error
 }
 
 type controller struct {
@@ -20,6 +21,10 @@ func NewController(service Service) Controller {
 
 type CreateCompaniesRequest struct {
 	Names []string `json:"names" validate:"required~nama perusahaan tidak boleh kosong"`
+}
+
+type GetCompaniesRequest struct {
+	Keyword string `json:"keyword"`
 }
 
 func (ctrl *controller) Create(c *fiber.Ctx) error {
@@ -39,6 +44,21 @@ func (ctrl *controller) Create(c *fiber.Ctx) error {
 	}
 
 	res := helper.ResponseSuccess("berhasil mendaftarkan perusahaan", nil)
-
 	return c.Status(fiber.StatusCreated).JSON(res)
+}
+
+func (ctrl *controller) Find(c *fiber.Ctx) error {
+	var getCompaniesRequest GetCompaniesRequest
+	if err := c.BodyParser(&getCompaniesRequest); err != nil {
+		response := helper.ResponseFailed(err.Error())
+		return c.Status(fiber.StatusBadRequest).JSON(response)
+	}
+
+	companies, err := ctrl.service.Find(c.Context(), &getCompaniesRequest)
+	if err != nil {
+		return helper.GenerateErrorResponse(c, err.Error())
+	}
+
+	res := helper.ResponseSuccess("berhasil memuat daftar perusahaan", companies)
+	return c.Status(fiber.StatusOK).JSON(res)
 }
