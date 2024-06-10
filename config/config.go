@@ -11,6 +11,9 @@ type Config struct {
 	AppPort       string `mapstructure:"APP_PORT"`
 	ClientBaseURL string `mapstructure:"CLIENT_BASE_URL"`
 
+	JwtAccessTokenSecret   string `mapstructure:"JWT_SECRET_KEY"`
+	JwtAccessTokenDuration uint   `mapstructure:"JWT_ACCESS_TOKEN_DURATION"`
+
 	PostgresDatabase string `mapstructure:"POSTGRES_DATABASE"`
 	PostgresHost     string `mapstructure:"POSTGRES_HOST"`
 	PostgresPassword string `mapstructure:"POSTGRES_PASSWORD"`
