@@ -15,7 +15,8 @@ func setupRouter(
 
 	// users
 	usersApi := api.Group("/users")
-	usersApi.Post("/", userController.Register)
+	usersApi.Post("/register", userController.Register)
+	usersApi.Post("/login", userController.Login)
 
 	// companies
 	companiesApi := api.Group("/companies")

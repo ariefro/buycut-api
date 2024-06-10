@@ -11,6 +11,7 @@ import (
 	"github.com/ariefro/buycut-api/database"
 	"github.com/ariefro/buycut-api/internal/company"
 	"github.com/ariefro/buycut-api/internal/server"
+	"github.com/ariefro/buycut-api/internal/user"
 	"github.com/google/wire"
 )
 
@@ -19,13 +20,18 @@ import (
 func InitializedServer() error {
 	configConfig := config.NewLoadConfig()
 	db := database.NewConnectPostgres(configConfig)
-	repository := company.NewRepository(db)
-	service := company.NewService(repository)
-	controller := company.NewController(service)
-	error2 := server.NewFiberServer(configConfig, controller)
+	repository := user.NewRepository(db)
+	service := user.NewService(configConfig, repository)
+	controller := user.NewController(service)
+	companyRepository := company.NewRepository(db)
+	companyService := company.NewService(companyRepository)
+	companyController := company.NewController(companyService)
+	error2 := server.NewFiberServer(configConfig, controller, companyController)
 	return error2
 }
 
 // initializer.go:
+
+var userSet = wire.NewSet(user.NewRepository, user.NewService, user.NewController)
 
 var companySet = wire.NewSet(company.NewRepository, company.NewService, company.NewController)

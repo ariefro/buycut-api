@@ -8,7 +8,14 @@ import (
 	"github.com/ariefro/buycut-api/database"
 	"github.com/ariefro/buycut-api/internal/company"
 	"github.com/ariefro/buycut-api/internal/server"
+	"github.com/ariefro/buycut-api/internal/user"
 	"github.com/google/wire"
+)
+
+var userSet = wire.NewSet(
+	user.NewRepository,
+	user.NewService,
+	user.NewController,
 )
 
 var companySet = wire.NewSet(
@@ -21,6 +28,7 @@ func InitializedServer() error {
 	wire.Build(
 		config.NewLoadConfig,
 		database.NewConnectPostgres,
+		userSet,
 		companySet,
 		server.NewFiberServer,
 	)

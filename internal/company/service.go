@@ -2,7 +2,6 @@ package company
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/ariefro/buycut-api/internal/entity"
 	"github.com/ariefro/buycut-api/pkg/helper"
@@ -21,7 +20,6 @@ func NewService(repo Repository) Service {
 }
 
 func (s *service) Create(ctx context.Context, reqs CreateCompaniesRequest) error {
-	fmt.Println("pppp", reqs)
 	var companies []*entity.Company
 	for _, name := range reqs.Names {
 		slug := helper.GenerateSlug(name)
