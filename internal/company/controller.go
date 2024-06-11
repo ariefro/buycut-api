@@ -2,6 +2,7 @@ package company
 
 import (
 	"github.com/ariefro/buycut-api/pkg/helper"
+	"github.com/ariefro/buycut-api/pkg/pagination"
 	"github.com/gofiber/fiber/v2"
 	"github.com/usepzaka/validator"
 )
@@ -19,27 +20,41 @@ func NewController(service Service) Controller {
 	return &controller{service}
 }
 
-type CreateCompaniesRequest struct {
+type createCompaniesRequest struct {
 	Names []string `json:"names" validate:"required~nama perusahaan tidak boleh kosong"`
 }
 
-type GetCompaniesRequest struct {
+type getCompaniesRequest struct {
 	Keyword string `json:"keyword"`
 }
 
+type baseResponseSuccessWithPagination struct {
+	Message   string            `json:"message"`
+	Pages     *pagination.Pages `json:"page"`
+	Companies interface{}       `json:"companies"`
+}
+
+func getCompaniesResponse(message string, data interface{}, pages *pagination.Pages) baseResponseSuccessWithPagination {
+	return baseResponseSuccessWithPagination{
+		Message:   message,
+		Pages:     pages,
+		Companies: data,
+	}
+}
+
 func (ctrl *controller) Create(c *fiber.Ctx) error {
-	var createCompaniesRequest CreateCompaniesRequest
-	if err := c.BodyParser(&createCompaniesRequest); err != nil {
+	var request createCompaniesRequest
+	if err := c.BodyParser(&request); err != nil {
 		response := helper.ResponseFailed(err.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(response)
 	}
 
-	if errValid := validator.ValidateStruct(createCompaniesRequest); errValid != nil {
+	if errValid := validator.ValidateStruct(request); errValid != nil {
 		response := helper.ResponseFailed(errValid.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(response)
 	}
 
-	if err := ctrl.service.Create(c.Context(), createCompaniesRequest); err != nil {
+	if err := ctrl.service.Create(c.Context(), request); err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
@@ -48,17 +63,28 @@ func (ctrl *controller) Create(c *fiber.Ctx) error {
 }
 
 func (ctrl *controller) Find(c *fiber.Ctx) error {
-	var getCompaniesRequest GetCompaniesRequest
-	if err := c.BodyParser(&getCompaniesRequest); err != nil {
+	var request getCompaniesRequest
+	if err := c.BodyParser(&request); err != nil {
 		response := helper.ResponseFailed(err.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(response)
 	}
 
-	companies, err := ctrl.service.Find(c.Context(), &getCompaniesRequest)
+	count, err := ctrl.service.Count(c.Context(), &request)
 	if err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	res := helper.ResponseSuccess("berhasil memuat daftar perusahaan", companies)
-	return c.Status(fiber.StatusOK).JSON(res)
+	pages := pagination.NewFromRequest(c, int(count))
+	paginationParams := pagination.PaginationParams{
+		Offset: pages.Offset(),
+		Limit:  pages.Size(),
+	}
+
+	companies, err := ctrl.service.Find(c.Context(), &request, &paginationParams)
+	if err != nil {
+		return helper.GenerateErrorResponse(c, err.Error())
+	}
+
+	data := getCompaniesResponse("berhasil memuat daftar perusahaan", companies, pages)
+	return c.Status(fiber.StatusOK).JSON(data)
 }

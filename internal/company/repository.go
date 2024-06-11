@@ -3,15 +3,18 @@ package company
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/ariefro/buycut-api/internal/entity"
 	"github.com/ariefro/buycut-api/pkg/common"
+	"github.com/ariefro/buycut-api/pkg/pagination"
 	"gorm.io/gorm"
 )
 
 type Repository interface {
 	Create(ctx context.Context, companies []*entity.Company) error
-	Find(ctx context.Context, keyword string) ([]*entity.Company, error)
+	Count(ctx context.Context, args *getCompaniesRequest) (int64, error)
+	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
 }
 
 type repository struct {
@@ -34,16 +37,30 @@ func (r *repository) Create(ctx context.Context, companies []*entity.Company) er
 	return nil
 }
 
-func (r *repository) Find(ctx context.Context, keyword string) ([]*entity.Company, error) {
-	var companies []*entity.Company
-
+func (r *repository) Count(ctx context.Context, args *getCompaniesRequest) (int64, error) {
+	var count int64
 	query := r.db.WithContext(ctx).Model(&entity.Company{})
 
-	if keyword != "" {
-		query = query.Where("name LIKE ?", "%"+keyword+"%")
+	if args.Keyword != "" {
+		query = query.Where("name LIKE ?", "%"+args.Keyword+"%")
 	}
 
-	if err := query.Find(&companies).Error; err != nil {
+	if err := query.Count(&count).Error; err != nil {
+		return 0, fmt.Errorf("failed to count companies: %w", err)
+	}
+
+	return count, nil
+}
+
+func (r *repository) Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error) {
+	var companies []*entity.Company
+	query := r.db.WithContext(ctx).Model(&entity.Company{})
+
+	if args.Keyword != "" {
+		query = query.Where("name LIKE ?", "%"+args.Keyword+"%")
+	}
+
+	if err := query.Limit(paginationParams.Limit).Offset(paginationParams.Offset).Find(&companies).Error; err != nil {
 		return nil, err
 	}
 

@@ -5,11 +5,13 @@ import (
 
 	"github.com/ariefro/buycut-api/internal/entity"
 	"github.com/ariefro/buycut-api/pkg/helper"
+	"github.com/ariefro/buycut-api/pkg/pagination"
 )
 
 type Service interface {
-	Create(ctx context.Context, input CreateCompaniesRequest) error
-	Find(ctx context.Context, input *GetCompaniesRequest) ([]*entity.Company, error)
+	Create(ctx context.Context, input createCompaniesRequest) error
+	Count(ctx context.Context, input *getCompaniesRequest) (int64, error)
+	Find(ctx context.Context, input *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
 }
 
 type service struct {
@@ -20,7 +22,7 @@ func NewService(repo Repository) Service {
 	return &service{repo}
 }
 
-func (s *service) Create(ctx context.Context, reqs CreateCompaniesRequest) error {
+func (s *service) Create(ctx context.Context, reqs createCompaniesRequest) error {
 	var companies []*entity.Company
 	for _, name := range reqs.Names {
 		slug := helper.GenerateSlug(name)
@@ -36,6 +38,10 @@ func (s *service) Create(ctx context.Context, reqs CreateCompaniesRequest) error
 	return s.repo.Create(ctx, companies)
 }
 
-func (s *service) Find(ctx context.Context, input *GetCompaniesRequest) ([]*entity.Company, error) {
-	return s.repo.Find(ctx, input.Keyword)
+func (s *service) Count(ctx context.Context, args *getCompaniesRequest) (int64, error) {
+	return s.repo.Count(ctx, args)
+}
+
+func (s *service) Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error) {
+	return s.repo.Find(ctx, args, paginationParams)
 }
