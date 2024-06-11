@@ -29,10 +29,6 @@ func NewRepository(db *gorm.DB) Repository {
 
 func (r *repository) Create(ctx context.Context, companies []*entity.Company) error {
 	if err := r.db.WithContext(ctx).Create(companies).Error; err != nil {
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			return errors.New(common.ErrDuplicateEntry)
-		}
-
 		return err
 	}
 
@@ -83,8 +79,13 @@ func (r *repository) FindOneByID(ctx context.Context, companyID uint) (*entity.C
 }
 
 func (r *repository) Update(ctx context.Context, companyID uint, data map[string]interface{}) error {
-	if err := r.db.WithContext(ctx).Model(&entity.Company{}).Where("id = ?", companyID).Updates(data).Error; err != nil {
-		return err
+	result := r.db.WithContext(ctx).Model(&entity.Company{}).Where("id = ?", companyID).Updates(data)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return errors.New(common.CompanyNotFound)
 	}
 
 	return nil
