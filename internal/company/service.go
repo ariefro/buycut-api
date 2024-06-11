@@ -15,6 +15,7 @@ type Service interface {
 	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
 	FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error)
 	Update(ctx context.Context, args *updateCompaniesRequest) error
+	Delete(ctx context.Context, companyID uint) error
 }
 
 type service struct {
@@ -61,4 +62,8 @@ func (s *service) Update(ctx context.Context, args *updateCompaniesRequest) erro
 	}
 
 	return s.repo.Update(ctx, args.CompanyID, dataToUpdate)
+}
+
+func (s *service) Delete(ctx context.Context, companyID uint) error {
+	return s.repo.Delete(ctx, companyID)
 }

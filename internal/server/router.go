@@ -25,4 +25,5 @@ func setupRouter(
 	companiesApi.Get("/", companyController.Find)
 	companiesApi.Get("/:id", companyController.FindOneByID)
 	companiesApi.Put("/", companyController.Update)
+	companiesApi.Delete("/:id", companyController.Delete)
 }

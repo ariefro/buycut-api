@@ -1,8 +1,6 @@
 package company
 
 import (
-	"fmt"
-
 	"github.com/ariefro/buycut-api/pkg/helper"
 	"github.com/ariefro/buycut-api/pkg/pagination"
 	"github.com/gofiber/fiber/v2"
@@ -14,6 +12,7 @@ type Controller interface {
 	Find(c *fiber.Ctx) error
 	FindOneByID(c *fiber.Ctx) error
 	Update(c *fiber.Ctx) error
+	Delete(c *fiber.Ctx) error
 }
 
 type controller struct {
@@ -106,8 +105,6 @@ func (ctrl *controller) FindOneByID(c *fiber.Ctx) error {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	fmt.Println("======")
-
 	res := helper.ResponseSuccess("berhasil memuat data perusahaan", company)
 	return c.Status(fiber.StatusOK).JSON(res)
 }
@@ -129,5 +126,16 @@ func (ctrl *controller) Update(c *fiber.Ctx) error {
 	}
 
 	res := helper.ResponseSuccess("berhasil mengupdate data perusahaan", nil)
+	return c.Status(fiber.StatusOK).JSON(res)
+}
+
+func (ctrl *controller) Delete(c *fiber.Ctx) error {
+	companyID := helper.ParseStringToUint(c.Params("id"))
+
+	if err := ctrl.service.Delete(c.Context(), companyID); err != nil {
+		return helper.GenerateErrorResponse(c, err.Error())
+	}
+
+	res := helper.ResponseSuccess("berhasil menghapus data perusahaan", nil)
 	return c.Status(fiber.StatusOK).JSON(res)
 }

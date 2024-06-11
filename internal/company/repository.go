@@ -17,6 +17,7 @@ type Repository interface {
 	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
 	FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error)
 	Update(ctx context.Context, companyID uint, data map[string]interface{}) error
+	Delete(ctx context.Context, companyID uint) error
 }
 
 type repository struct {
@@ -80,6 +81,19 @@ func (r *repository) FindOneByID(ctx context.Context, companyID uint) (*entity.C
 
 func (r *repository) Update(ctx context.Context, companyID uint, data map[string]interface{}) error {
 	result := r.db.WithContext(ctx).Model(&entity.Company{}).Where("id = ?", companyID).Updates(data)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return errors.New(common.CompanyNotFound)
+	}
+
+	return nil
+}
+
+func (r *repository) Delete(ctx context.Context, companyID uint) error {
+	result := r.db.WithContext(ctx).Delete(&entity.Company{}, companyID)
 	if result.Error != nil {
 		return result.Error
 	}
