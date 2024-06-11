@@ -15,6 +15,7 @@ type Repository interface {
 	Create(ctx context.Context, companies []*entity.Company) error
 	Count(ctx context.Context, args *getCompaniesRequest) (int64, error)
 	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
+	Update(ctx context.Context, companyID uint, data map[string]interface{}) error
 }
 
 type repository struct {
@@ -65,4 +66,12 @@ func (r *repository) Find(ctx context.Context, args *getCompaniesRequest, pagina
 	}
 
 	return companies, nil
+}
+
+func (r *repository) Update(ctx context.Context, companyID uint, data map[string]interface{}) error {
+	if err := r.db.WithContext(ctx).Model(&entity.Company{}).Where("id = ?", companyID).Updates(data).Error; err != nil {
+		return err
+	}
+
+	return nil
 }

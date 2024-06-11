@@ -10,6 +10,7 @@ import (
 type Controller interface {
 	Create(c *fiber.Ctx) error
 	Find(c *fiber.Ctx) error
+	Update(c *fiber.Ctx) error
 }
 
 type controller struct {
@@ -40,6 +41,11 @@ func getCompaniesResponse(message string, data interface{}, pages *pagination.Pa
 		Pages:     pages,
 		Companies: data,
 	}
+}
+
+type updateCompaniesRequest struct {
+	CompanyID uint   `json:"company_id" validate:"required~id tidak boleh kosong"`
+	Name      string `json:"name" validate:"required~nama perusahaan tidak boleh kosong"`
 }
 
 func (ctrl *controller) Create(c *fiber.Ctx) error {
@@ -87,4 +93,24 @@ func (ctrl *controller) Find(c *fiber.Ctx) error {
 
 	data := getCompaniesResponse("berhasil memuat daftar perusahaan", companies, pages)
 	return c.Status(fiber.StatusOK).JSON(data)
+}
+
+func (ctrl *controller) Update(c *fiber.Ctx) error {
+	var request updateCompaniesRequest
+	if err := c.BodyParser(&request); err != nil {
+		res := helper.ResponseFailed(err.Error())
+		return c.Status(fiber.StatusBadRequest).JSON(res)
+	}
+
+	if errValid := validator.ValidateStruct(request); errValid != nil {
+		response := helper.ResponseFailed(errValid.Error())
+		return c.Status(fiber.StatusBadRequest).JSON(response)
+	}
+
+	if err := ctrl.service.Update(c.Context(), &request); err != nil {
+		return helper.GenerateErrorResponse(c, err.Error())
+	}
+
+	res := helper.ResponseSuccess("berhasil mengupdate data perusahaan", nil)
+	return c.Status(fiber.StatusOK).JSON(res)
 }
