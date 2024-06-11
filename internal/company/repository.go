@@ -66,8 +66,8 @@ func (r *repository) Find(ctx context.Context, args *getCompaniesRequest, pagina
 }
 
 func (r *repository) FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error) {
-	var company entity.Company
-	if err := r.db.WithContext(ctx).Model(&entity.Company{}).First("id = ?", companyID).Error; err != nil {
+	var company *entity.Company
+	if err := r.db.WithContext(ctx).First(&company, "id = ?", companyID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New(common.CompanyNotFound)
 		}
@@ -75,7 +75,7 @@ func (r *repository) FindOneByID(ctx context.Context, companyID uint) (*entity.C
 		return nil, err
 	}
 
-	return &company, nil
+	return company, nil
 }
 
 func (r *repository) Update(ctx context.Context, companyID uint, data map[string]interface{}) error {

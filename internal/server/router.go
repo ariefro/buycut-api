@@ -23,5 +23,6 @@ func setupRouter(
 	companiesApi := api.Group("/companies")
 	companiesApi.Post("/", middleware.Auth(), companyController.Create)
 	companiesApi.Get("/", companyController.Find)
+	companiesApi.Get("/:id", companyController.FindOneByID)
 	companiesApi.Put("/", companyController.Update)
 }
