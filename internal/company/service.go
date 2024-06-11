@@ -13,6 +13,7 @@ type Service interface {
 	Create(ctx context.Context, args createCompaniesRequest) error
 	Count(ctx context.Context, args *getCompaniesRequest) (int64, error)
 	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
+	FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error)
 	Update(ctx context.Context, args *updateCompaniesRequest) error
 }
 
@@ -46,6 +47,10 @@ func (s *service) Count(ctx context.Context, args *getCompaniesRequest) (int64, 
 
 func (s *service) Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error) {
 	return s.repo.Find(ctx, args, paginationParams)
+}
+
+func (s *service) FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error) {
+	return s.repo.FindOneByID(ctx, companyID)
 }
 
 func (s *service) Update(ctx context.Context, args *updateCompaniesRequest) error {

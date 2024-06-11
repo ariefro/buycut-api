@@ -15,6 +15,7 @@ type Repository interface {
 	Create(ctx context.Context, companies []*entity.Company) error
 	Count(ctx context.Context, args *getCompaniesRequest) (int64, error)
 	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
+	FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error)
 	Update(ctx context.Context, companyID uint, data map[string]interface{}) error
 }
 
@@ -66,6 +67,19 @@ func (r *repository) Find(ctx context.Context, args *getCompaniesRequest, pagina
 	}
 
 	return companies, nil
+}
+
+func (r *repository) FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error) {
+	var company entity.Company
+	if err := r.db.WithContext(ctx).Model(&entity.Company{}).First("id = ?", companyID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New(common.CompanyNotFound)
+		}
+
+		return nil, err
+	}
+
+	return &company, nil
 }
 
 func (r *repository) Update(ctx context.Context, companyID uint, data map[string]interface{}) error {
