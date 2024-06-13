@@ -62,7 +62,7 @@ func (ctrl *controller) Create(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(response)
 	}
 
-	if err := ctrl.service.Create(c.Context(), request); err != nil {
+	if err := ctrl.service.Create(c.Context(), &request); err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 

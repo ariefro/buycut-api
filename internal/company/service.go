@@ -10,7 +10,7 @@ import (
 )
 
 type Service interface {
-	Create(ctx context.Context, args createCompaniesRequest) error
+	Create(ctx context.Context, args *createCompaniesRequest) error
 	Count(ctx context.Context, args *getCompaniesRequest) (int64, error)
 	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
 	FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error)
@@ -26,7 +26,7 @@ func NewService(repo Repository) Service {
 	return &service{repo}
 }
 
-func (s *service) Create(ctx context.Context, reqs createCompaniesRequest) error {
+func (s *service) Create(ctx context.Context, reqs *createCompaniesRequest) error {
 	var companies []*entity.Company
 	for _, name := range reqs.Names {
 		slug := helper.GenerateSlug(name)
