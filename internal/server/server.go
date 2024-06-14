@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/ariefro/buycut-api/config"
 	"github.com/ariefro/buycut-api/internal/company"
+	"github.com/ariefro/buycut-api/internal/middleware"
 	"github.com/ariefro/buycut-api/internal/product"
 	"github.com/ariefro/buycut-api/internal/user"
 	"github.com/gofiber/fiber/v2"
@@ -20,6 +21,7 @@ func NewFiberServer(
 	log.Println("starting server...")
 	app := fiber.New()
 	app.Use(recover.New())
+	app.Use(middleware.ConfigureCORS(config.ClientBaseURL))
 
 	setupRouter(
 		app,
