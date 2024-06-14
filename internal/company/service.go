@@ -2,6 +2,7 @@ package company
 
 import (
 	"context"
+	"strings"
 
 	"github.com/ariefro/buycut-api/internal/entity"
 	"github.com/ariefro/buycut-api/pkg/common"
@@ -32,7 +33,7 @@ func (s *service) Create(ctx context.Context, reqs *createCompaniesRequest) erro
 		slug := helper.GenerateSlug(name)
 
 		company := &entity.Company{
-			Name: name,
+			Name: strings.ToLower(name),
 			Slug: slug,
 		}
 
@@ -57,7 +58,7 @@ func (s *service) FindOneByID(ctx context.Context, companyID uint) (*entity.Comp
 func (s *service) Update(ctx context.Context, args *updateCompaniesRequest) error {
 	slug := helper.GenerateSlug(args.Name)
 	dataToUpdate := map[string]interface{}{
-		common.ColumnName: args.Name,
+		common.ColumnName: strings.ToLower(args.Name),
 		common.ColumnSlug: slug,
 	}
 

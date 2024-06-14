@@ -2,6 +2,7 @@ package product
 
 import (
 	"context"
+	"strings"
 
 	"github.com/ariefro/buycut-api/internal/entity"
 	"github.com/ariefro/buycut-api/pkg/helper"
@@ -25,7 +26,7 @@ func (s *service) Create(ctx context.Context, args *createProductsRequest) error
 		slug := helper.GenerateSlug(productName)
 
 		product := &entity.Product{
-			Name:      productName,
+			Name:      strings.ToLower(productName),
 			Slug:      slug,
 			CompanyID: args.CompanyID,
 		}

@@ -41,7 +41,8 @@ func (r *repository) Count(ctx context.Context, args *getCompaniesRequest) (int6
 	query := r.db.WithContext(ctx).Model(&entity.Company{})
 
 	if args.Keyword != "" {
-		query = query.Where("name LIKE ?", "%"+args.Keyword+"%")
+		query = query.Joins("LEFT JOIN products ON products.company_id = companies.id").
+			Where("LOWER(companies.name) = LOWER(?) OR LOWER(products.name) = LOWER(?)", args.Keyword, args.Keyword)
 	}
 
 	if err := query.Count(&count).Error; err != nil {
@@ -53,10 +54,11 @@ func (r *repository) Count(ctx context.Context, args *getCompaniesRequest) (int6
 
 func (r *repository) Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error) {
 	var companies []*entity.Company
-	query := r.db.WithContext(ctx).Model(&entity.Company{})
+	query := r.db.WithContext(ctx).Model(&entity.Company{}).Preload("Products")
 
 	if args.Keyword != "" {
-		query = query.Where("name LIKE ?", "%"+args.Keyword+"%")
+		query = query.Joins("LEFT JOIN products ON products.company_id = companies.id").
+			Where("LOWER(companies.name) = LOWER(?) OR LOWER(products.name) = LOWER(?)", args.Keyword, args.Keyword)
 	}
 
 	if err := query.Limit(paginationParams.Limit).Offset(paginationParams.Offset).Find(&companies).Error; err != nil {
@@ -68,7 +70,7 @@ func (r *repository) Find(ctx context.Context, args *getCompaniesRequest, pagina
 
 func (r *repository) FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error) {
 	var company *entity.Company
-	if err := r.db.WithContext(ctx).First(&company, "id = ?", companyID).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("Products").First(&company, "id = ?", companyID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New(common.CompanyNotFound)
 		}
