@@ -31,20 +31,6 @@ type getCompaniesRequest struct {
 	Keyword string `json:"keyword"`
 }
 
-type baseResponseSuccessWithPagination struct {
-	Message   string            `json:"message"`
-	Pages     *pagination.Pages `json:"page"`
-	Companies interface{}       `json:"companies"`
-}
-
-func getCompaniesResponse(message string, data interface{}, pages *pagination.Pages) baseResponseSuccessWithPagination {
-	return baseResponseSuccessWithPagination{
-		Message:   message,
-		Pages:     pages,
-		Companies: data,
-	}
-}
-
 type updateCompaniesRequest struct {
 	CompanyID uint   `json:"company_id" validate:"required~id tidak boleh kosong"`
 	Name      string `json:"name" validate:"required~nama perusahaan tidak boleh kosong"`
@@ -66,7 +52,7 @@ func (ctrl *controller) Create(c *fiber.Ctx) error {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	res := helper.ResponseSuccess("berhasil mendaftarkan perusahaan", nil)
+	res := helper.ResponseSuccess("Berhasil menambahkan produk ke daftar boikot", nil)
 	return c.Status(fiber.StatusCreated).JSON(res)
 }
 
@@ -88,12 +74,12 @@ func (ctrl *controller) Find(c *fiber.Ctx) error {
 		Limit:  pages.Size(),
 	}
 
-	companies, err := ctrl.service.Find(c.Context(), &request, &paginationParams)
+	result, err := ctrl.service.Find(c.Context(), &request, &paginationParams)
 	if err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	data := getCompaniesResponse("berhasil memuat daftar perusahaan", companies, pages)
+	data := helper.ResponseSuccessWithPagination("Berhasil memuat daftar produk yang diboikot", result, pages)
 	return c.Status(fiber.StatusOK).JSON(data)
 }
 
@@ -105,7 +91,7 @@ func (ctrl *controller) FindOneByID(c *fiber.Ctx) error {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	res := helper.ResponseSuccess("berhasil memuat data perusahaan", company)
+	res := helper.ResponseSuccess("Produk ini masuk dalam daftar boikot!", company)
 	return c.Status(fiber.StatusOK).JSON(res)
 }
 
@@ -125,7 +111,7 @@ func (ctrl *controller) Update(c *fiber.Ctx) error {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	res := helper.ResponseSuccess("berhasil mengupdate data perusahaan", nil)
+	res := helper.ResponseSuccess("Berhasil mengupdate data produk", nil)
 	return c.Status(fiber.StatusOK).JSON(res)
 }
 
@@ -136,6 +122,6 @@ func (ctrl *controller) Delete(c *fiber.Ctx) error {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	res := helper.ResponseSuccess("berhasil menghapus data perusahaan", nil)
+	res := helper.ResponseSuccess("Berhasil menghapus data produk", nil)
 	return c.Status(fiber.StatusOK).JSON(res)
 }
