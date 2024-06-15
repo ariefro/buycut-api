@@ -9,6 +9,7 @@ import (
 
 type Controller interface {
 	Create(c *fiber.Ctx) error
+	FindByKeyword(c *fiber.Ctx) error
 }
 
 type controller struct {
@@ -18,6 +19,10 @@ type controller struct {
 
 func NewController(service Service, companyService company.Service) Controller {
 	return &controller{service, companyService}
+}
+
+type getProductByKeywordRequest struct {
+	Keyword string `json:"keyword"`
 }
 
 type createProductsRequest struct {
@@ -46,6 +51,22 @@ func (ctrl *controller) Create(c *fiber.Ctx) error {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	res := helper.ResponseSuccess("berhasil menambahkan produk", nil)
+	res := helper.ResponseSuccess("Berhasil menambahkan produk", nil)
 	return c.Status(fiber.StatusCreated).JSON(res)
+}
+
+func (ctrl *controller) FindByKeyword(c *fiber.Ctx) error {
+	var request getProductByKeywordRequest
+	if err := c.BodyParser(&request); err != nil {
+		response := helper.ResponseFailed(err.Error())
+		return c.Status(fiber.StatusBadRequest).JSON(response)
+	}
+
+	result, err := ctrl.service.FindByKeyword(c.Context(), &request)
+	if err != nil {
+		return helper.GenerateErrorResponse(c, err.Error())
+	}
+
+	res := helper.ResponseSuccess("Produk ini masuk dalam daftar boikot!", result)
+	return c.Status(fiber.StatusOK).JSON(res)
 }

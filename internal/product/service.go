@@ -2,14 +2,17 @@ package product
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/ariefro/buycut-api/internal/entity"
+	"github.com/ariefro/buycut-api/pkg/common"
 	"github.com/ariefro/buycut-api/pkg/helper"
 )
 
 type Service interface {
 	Create(ctx context.Context, args *createProductsRequest) error
+	FindByKeyword(ctx context.Context, args *getProductByKeywordRequest) (interface{}, error)
 }
 
 type service struct {
@@ -35,4 +38,19 @@ func (s *service) Create(ctx context.Context, args *createProductsRequest) error
 	}
 
 	return s.repo.Create(ctx, products)
+}
+
+func (s *service) FindByKeyword(ctx context.Context, args *getProductByKeywordRequest) (interface{}, error) {
+	companies, products, err := s.repo.FindByKeyword(ctx, args.Keyword)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(companies) > 0 {
+		return companies, nil
+	} else if len(products) > 0 {
+		return products, nil
+	} else {
+		return nil, errors.New(common.ProductNotFound)
+	}
 }
