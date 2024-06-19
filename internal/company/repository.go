@@ -13,8 +13,8 @@ import (
 
 type Repository interface {
 	Create(ctx context.Context, companies *entity.Company) error
-	Count(ctx context.Context, args *getCompaniesRequest) (int64, error)
-	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
+	Count(ctx context.Context) (int64, error)
+	Find(ctx context.Context, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
 	FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error)
 	Update(ctx context.Context, companyID uint, data map[string]interface{}) error
 	Delete(ctx context.Context, companyID uint) error
@@ -36,32 +36,24 @@ func (r *repository) Create(ctx context.Context, companies *entity.Company) erro
 	return nil
 }
 
-func (r *repository) Count(ctx context.Context, args *getCompaniesRequest) (int64, error) {
+func (r *repository) Count(ctx context.Context) (int64, error) {
 	var count int64
-	query := r.db.WithContext(ctx).Model(&entity.Company{})
-
-	if args.Keyword != "" {
-		query = query.Joins("LEFT JOIN products ON products.company_id = companies.id").
-			Where("LOWER(companies.name) = LOWER(?) OR LOWER(products.name) = LOWER(?)", args.Keyword, args.Keyword)
-	}
-
-	if err := query.Count(&count).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&entity.Company{}).Joins("LEFT JOIN products ON products.company_id = companies.id").Count(&count).Error; err != nil {
 		return 0, fmt.Errorf("failed to count companies: %w", err)
 	}
 
 	return count, nil
 }
 
-func (r *repository) Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error) {
+func (r *repository) Find(ctx context.Context, paginationParams *pagination.PaginationParams) ([]*entity.Company, error) {
 	var companies []*entity.Company
-	query := r.db.WithContext(ctx).Model(&entity.Company{}).Preload("Products")
-
-	if args.Keyword != "" {
-		query = query.Joins("LEFT JOIN products ON products.company_id = companies.id").
-			Where("LOWER(companies.name) = LOWER(?) OR LOWER(products.name) = LOWER(?)", args.Keyword, args.Keyword)
-	}
-
-	if err := query.Limit(paginationParams.Limit).Offset(paginationParams.Offset).Find(&companies).Error; err != nil {
+	if err := r.db.WithContext(ctx).
+		Model(&entity.Company{}).
+		Preload("Products").
+		Joins("LEFT JOIN products ON products.company_id = companies.id").
+		Limit(paginationParams.Limit).
+		Offset(paginationParams.Offset).
+		Find(&companies).Error; err != nil {
 		return nil, err
 	}
 
