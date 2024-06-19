@@ -11,6 +11,11 @@ type Config struct {
 	AppPort       string `mapstructure:"APP_PORT"`
 	ClientBaseURL string `mapstructure:"CLIENT_BASE_URL"`
 
+	CloudinaryApiKey       string `mapstructure:"CLOUDINARY_API_KEY"`
+	CloudinaryBuycutFolder string `mapstructure:"CLOUDINARY_BUYCUT_FOLDER"`
+	CloudinaryCloudName    string `mapstructure:"CLOUDINARY_CLOUD_NAME"`
+	CloudinarySecretKey    string `mapstructure:"CLOUDINARY_SECRET_KEY"`
+
 	JwtAccessTokenSecret   string `mapstructure:"JWT_SECRET_KEY"`
 	JwtAccessTokenDuration uint   `mapstructure:"JWT_ACCESS_TOKEN_DURATION"`
 

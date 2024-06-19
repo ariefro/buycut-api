@@ -12,7 +12,7 @@ import (
 )
 
 type Repository interface {
-	Create(ctx context.Context, companies []*entity.Company) error
+	Create(ctx context.Context, companies *entity.Company) error
 	Count(ctx context.Context, args *getCompaniesRequest) (int64, error)
 	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
 	FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error)
@@ -28,7 +28,7 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db}
 }
 
-func (r *repository) Create(ctx context.Context, companies []*entity.Company) error {
+func (r *repository) Create(ctx context.Context, companies *entity.Company) error {
 	if err := r.db.WithContext(ctx).Create(companies).Error; err != nil {
 		return err
 	}

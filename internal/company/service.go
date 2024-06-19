@@ -2,16 +2,20 @@ package company
 
 import (
 	"context"
+	"mime/multipart"
 	"strings"
 
+	"github.com/ariefro/buycut-api/config"
+	cloudstorage "github.com/ariefro/buycut-api/internal/cloudStorage"
 	"github.com/ariefro/buycut-api/internal/entity"
 	"github.com/ariefro/buycut-api/pkg/common"
 	"github.com/ariefro/buycut-api/pkg/helper"
 	"github.com/ariefro/buycut-api/pkg/pagination"
+	"github.com/google/uuid"
 )
 
 type Service interface {
-	Create(ctx context.Context, args *createCompaniesRequest) error
+	Create(ctx context.Context, args *createCompaniesRequest, formHeader *multipart.FileHeader) error
 	Count(ctx context.Context, args *getCompaniesRequest) (int64, error)
 	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
 	FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error)
@@ -20,27 +24,41 @@ type Service interface {
 }
 
 type service struct {
-	repo Repository
+	config *config.Config
+	repo   Repository
 }
 
-func NewService(repo Repository) Service {
-	return &service{repo}
+func NewService(config *config.Config, repo Repository) Service {
+	return &service{config, repo}
 }
 
-func (s *service) Create(ctx context.Context, reqs *createCompaniesRequest) error {
-	var companies []*entity.Company
-	for _, name := range reqs.Names {
-		slug := helper.GenerateSlug(name)
+type uploadImageArgs struct {
+	File     *multipart.FileHeader
+	Slug     string
+	PublicID string
+}
 
-		company := &entity.Company{
-			Name: strings.ToLower(name),
-			Slug: slug,
-		}
+func (s *service) Create(ctx context.Context, args *createCompaniesRequest, formHeader *multipart.FileHeader) error {
+	publicID := uuid.NewString()
+	slug := helper.GenerateSlug(args.Name)
 
-		companies = append(companies, company)
+	imageURL, err := s.uploadImage(ctx, &uploadImageArgs{
+		File:     formHeader,
+		Slug:     slug,
+		PublicID: publicID,
+	})
+	if err != nil {
+		return err
 	}
 
-	return s.repo.Create(ctx, companies)
+	company := &entity.Company{
+		Name:        strings.ToLower(args.Name),
+		Slug:        slug,
+		Description: args.Description,
+		ImageURL:    imageURL,
+	}
+
+	return s.repo.Create(ctx, company)
 }
 
 func (s *service) Count(ctx context.Context, args *getCompaniesRequest) (int64, error) {
@@ -67,4 +85,40 @@ func (s *service) Update(ctx context.Context, args *updateCompaniesRequest) erro
 
 func (s *service) Delete(ctx context.Context, companyID uint) error {
 	return s.repo.Delete(ctx, companyID)
+}
+
+func (s *service) configureCloudinary() *config.CloudinaryConfig {
+	var config = &config.CloudinaryConfig{
+		CloudinaryCloudName:    s.config.CloudinaryCloudName,
+		CloudinaryApiKey:       s.config.CloudinaryApiKey,
+		CloudinarySecretKey:    s.config.CloudinarySecretKey,
+		CloudinaryBuycutFolder: s.config.CloudinaryBuycutFolder,
+	}
+
+	return config
+}
+
+func (s *service) uploadImage(ctx context.Context, args *uploadImageArgs) (string, error) {
+	if args.File == nil {
+		return "", nil
+	}
+
+	err := helper.ValidateImage(args.File)
+	if err != nil {
+		return "", err
+	}
+
+	imageFile, err := args.File.Open()
+	if err != nil {
+		return "", err
+	}
+	defer imageFile.Close() // Ensure file is closed even on errors
+
+	cloudinaryConfig := s.configureCloudinary()
+	imageURL, err := cloudstorage.Upload(args.PublicID, &cloudstorage.UploadArgs{File: imageFile, Slug: args.Slug, Config: cloudinaryConfig})
+	if err != nil {
+		return "", err
+	}
+
+	return imageURL, nil
 }

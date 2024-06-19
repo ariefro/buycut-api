@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/ariefro/buycut-api/config"
-	"github.com/cloudinary/cloudinary-go/api"
-	"github.com/cloudinary/cloudinary-go/api/uploader"
 	"github.com/cloudinary/cloudinary-go/v2"
+	"github.com/cloudinary/cloudinary-go/v2/api"
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 )
 
 type UploadArgs struct {
@@ -16,7 +16,7 @@ type UploadArgs struct {
 }
 
 func setupCloudinary(config *config.CloudinaryConfig) (*cloudinary.Cloudinary, error) {
-	cld, err := cloudinary.NewFromParams(config.CloudName, config.APIKey, config.SecretKey)
+	cld, err := cloudinary.NewFromParams(config.CloudinaryCloudName, config.CloudinaryApiKey, config.CloudinarySecretKey)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func Upload(publicID string, args *UploadArgs) (string, error) {
 	uploadParams := uploader.UploadParams{
 		PublicID: publicID,
 		Tags:     api.CldAPIArray{args.Slug},
-		Folder:   args.Config.BuycutFolder + "/" + args.Slug,
+		Folder:   args.Config.CloudinaryBuycutFolder + "/" + args.Slug,
 	}
 
 	result, err := cld.Upload.Upload(ctx, args.File, uploadParams)
