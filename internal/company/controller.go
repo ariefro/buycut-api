@@ -54,7 +54,7 @@ func (ctrl *controller) Create(c *fiber.Ctx) error {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	res := helper.ResponseSuccess("Berhasil menambahkan produk ke daftar boikot", nil)
+	res := helper.ResponseSuccess("Berhasil menambahkan merek ke daftar boikot", nil)
 	return c.Status(fiber.StatusCreated).JSON(res)
 }
 
@@ -75,7 +75,7 @@ func (ctrl *controller) Find(c *fiber.Ctx) error {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	data := helper.ResponseSuccessWithPagination("Berhasil memuat daftar produk yang diboikot", result, pages)
+	data := helper.ResponseSuccessWithPagination("Berhasil memuat daftar merek yang diboikot", result, pages)
 	return c.Status(fiber.StatusOK).JSON(data)
 }
 
@@ -87,7 +87,7 @@ func (ctrl *controller) FindOneByID(c *fiber.Ctx) error {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	res := helper.ResponseSuccess("Produk ini masuk dalam daftar boikot!", company)
+	res := helper.ResponseSuccess("Merek ini masuk dalam daftar boikot!", company)
 	return c.Status(fiber.StatusOK).JSON(res)
 }
 
@@ -107,7 +107,7 @@ func (ctrl *controller) Update(c *fiber.Ctx) error {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	res := helper.ResponseSuccess("Berhasil mengupdate data produk", nil)
+	res := helper.ResponseSuccess("Berhasil mengupdate data merek", nil)
 	return c.Status(fiber.StatusOK).JSON(res)
 }
 
@@ -118,6 +118,6 @@ func (ctrl *controller) Delete(c *fiber.Ctx) error {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	res := helper.ResponseSuccess("Berhasil menghapus data produk", nil)
+	res := helper.ResponseSuccess("Berhasil menghapus merek dari daftar boikot", nil)
 	return c.Status(fiber.StatusOK).JSON(res)
 }

@@ -51,7 +51,7 @@ func (ctrl *controller) Create(c *fiber.Ctx) error {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	res := helper.ResponseSuccess("Berhasil menambahkan produk", nil)
+	res := helper.ResponseSuccess("Berhasil menambahkan merek ke daftar boikot", nil)
 	return c.Status(fiber.StatusCreated).JSON(res)
 }
 
@@ -67,6 +67,6 @@ func (ctrl *controller) FindByKeyword(c *fiber.Ctx) error {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	res := helper.ResponseSuccess("Produk ini masuk dalam daftar boikot!", result)
+	res := helper.ResponseSuccess("Merek ini masuk dalam daftar boikot!", result)
 	return c.Status(fiber.StatusOK).JSON(res)
 }
