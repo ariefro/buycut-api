@@ -8,5 +8,8 @@ const (
 	CompanyNotFound = "Perusahaan tidak terdaftar"
 	ProductNotFound = "Produk tidak ditemukan dalam daftar boikot"
 
+	InvalidImageFile   = "file gambar tidak valid"
+	FileSizeIsTooLarge = "ukuran file seharusnya tidak melebihi 10 MB"
+
 	MissingJWT = "Missing or malformed JWT"
 )
