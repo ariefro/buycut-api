@@ -3,41 +3,48 @@ package product
 import (
 	"context"
 	"errors"
+	"mime/multipart"
 	"strings"
 
+	"github.com/ariefro/buycut-api/config"
+	"github.com/ariefro/buycut-api/internal/cloudstorage"
 	"github.com/ariefro/buycut-api/internal/entity"
 	"github.com/ariefro/buycut-api/pkg/common"
 	"github.com/ariefro/buycut-api/pkg/helper"
 )
 
 type Service interface {
-	Create(ctx context.Context, args *createProductsRequest) error
+	Create(ctx context.Context, args *createProductsRequest, formHeader *multipart.FileHeader) error
 	FindByKeyword(ctx context.Context, args *getProductByKeywordRequest) (interface{}, error)
 }
 
 type service struct {
-	repo Repository
+	config *config.Config
+	repo   Repository
 }
 
-func NewService(repo Repository) Service {
-	return &service{repo}
+func NewService(config *config.Config, repo Repository) Service {
+	return &service{config, repo}
 }
 
-func (s *service) Create(ctx context.Context, args *createProductsRequest) error {
-	var products []*entity.Product
-	for _, productName := range args.ProductNames {
-		slug := helper.GenerateSlug(productName)
-
-		product := &entity.Product{
-			Name:      strings.ToLower(productName),
-			Slug:      slug,
-			CompanyID: args.CompanyID,
-		}
-
-		products = append(products, product)
+func (s *service) Create(ctx context.Context, args *createProductsRequest, formHeader *multipart.FileHeader) error {
+	slug := helper.GenerateSlug(args.Name)
+	imageURL, err := cloudstorage.UploadImage(ctx, &cloudstorage.UploadImageArgs{
+		File: formHeader,
+		Slug: slug,
+	}, s.configureCloudinary())
+	if err != nil {
+		return err
 	}
 
-	return s.repo.Create(ctx, products)
+	product := &entity.Product{
+		Name:      strings.ToLower(args.Name),
+		Slug:      slug,
+		CompanyID: args.CompanyID,
+		ImageURL:  imageURL,
+	}
+
+	return s.repo.Create(ctx, product)
 }
 
 func (s *service) FindByKeyword(ctx context.Context, args *getProductByKeywordRequest) (interface{}, error) {
@@ -53,4 +60,15 @@ func (s *service) FindByKeyword(ctx context.Context, args *getProductByKeywordRe
 	} else {
 		return nil, errors.New(common.ProductNotFound)
 	}
+}
+
+func (s *service) configureCloudinary() *config.CloudinaryConfig {
+	var config = &config.CloudinaryConfig{
+		CloudinaryCloudName:    s.config.CloudinaryCloudName,
+		CloudinaryApiKey:       s.config.CloudinaryApiKey,
+		CloudinarySecretKey:    s.config.CloudinarySecretKey,
+		CloudinaryBuycutFolder: s.config.CloudinaryBuycutFolder,
+	}
+
+	return config
 }

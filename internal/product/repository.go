@@ -8,7 +8,7 @@ import (
 )
 
 type Repository interface {
-	Create(ctx context.Context, products []*entity.Product) error
+	Create(ctx context.Context, products *entity.Product) error
 	FindByKeyword(ctx context.Context, keyword string) ([]*entity.Company, []*entity.Product, error)
 }
 
@@ -20,7 +20,7 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db}
 }
 
-func (r *repository) Create(ctx context.Context, products []*entity.Product) error {
+func (r *repository) Create(ctx context.Context, products *entity.Product) error {
 	if err := r.db.WithContext(ctx).Create(&products).Error; err != nil {
 		return err
 	}

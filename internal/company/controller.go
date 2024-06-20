@@ -25,7 +25,7 @@ func NewController(service Service) Controller {
 
 type createCompaniesRequest struct {
 	Name        string `form:"name" validate:"required~nama perusahaan tidak boleh kosong"`
-	Description string `form:"description"`
+	Description string `form:"description" validate:"required~deskripsi tidak boleh kosong"`
 }
 
 type getCompaniesRequest struct {
@@ -49,7 +49,12 @@ func (ctrl *controller) Create(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(response)
 	}
 
-	formHeader, _ := c.FormFile("image")
+	formHeader, err := c.FormFile("image")
+	if err != nil {
+		response := helper.ResponseFailed("Image file is required")
+		return c.Status(fiber.StatusBadRequest).JSON(response)
+	}
+
 	if err := ctrl.service.Create(c.Context(), &request, formHeader); err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}

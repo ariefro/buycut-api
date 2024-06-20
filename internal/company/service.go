@@ -11,7 +11,6 @@ import (
 	"github.com/ariefro/buycut-api/pkg/common"
 	"github.com/ariefro/buycut-api/pkg/helper"
 	"github.com/ariefro/buycut-api/pkg/pagination"
-	"github.com/google/uuid"
 )
 
 type Service interface {
@@ -33,20 +32,16 @@ func NewService(config *config.Config, repo Repository) Service {
 }
 
 type uploadImageArgs struct {
-	File     *multipart.FileHeader
-	Slug     string
-	PublicID string
+	File *multipart.FileHeader
+	Slug string
 }
 
 func (s *service) Create(ctx context.Context, args *createCompaniesRequest, formHeader *multipart.FileHeader) error {
-	publicID := uuid.NewString()
 	slug := helper.GenerateSlug(args.Name)
-
-	imageURL, err := s.uploadImage(ctx, &uploadImageArgs{
-		File:     formHeader,
-		Slug:     slug,
-		PublicID: publicID,
-	})
+	imageURL, err := cloudstorage.UploadImage(ctx, &cloudstorage.UploadImageArgs{
+		File: formHeader,
+		Slug: slug,
+	}, s.configureCloudinary())
 	if err != nil {
 		return err
 	}
@@ -96,29 +91,4 @@ func (s *service) configureCloudinary() *config.CloudinaryConfig {
 	}
 
 	return config
-}
-
-func (s *service) uploadImage(ctx context.Context, args *uploadImageArgs) (string, error) {
-	if args.File == nil {
-		return "", nil
-	}
-
-	err := helper.ValidateImage(args.File)
-	if err != nil {
-		return "", err
-	}
-
-	imageFile, err := args.File.Open()
-	if err != nil {
-		return "", err
-	}
-	defer imageFile.Close() // Ensure file is closed even on errors
-
-	cloudinaryConfig := s.configureCloudinary()
-	imageURL, err := cloudstorage.Upload(&cloudstorage.UploadArgs{File: imageFile, Slug: args.Slug, Config: cloudinaryConfig})
-	if err != nil {
-		return "", err
-	}
-
-	return imageURL, nil
 }

@@ -26,8 +26,8 @@ type getProductByKeywordRequest struct {
 }
 
 type createProductsRequest struct {
-	CompanyID    uint     `json:"company_id" validate:"required~company id tidak boleh kosong"`
-	ProductNames []string `json:"product_names" validate:"required~nama produk tidak boleh kosong"`
+	CompanyID uint   `form:"company_id" validate:"required~company id tidak boleh kosong"`
+	Name      string `form:"name" validate:"required~nama perusahaan tidak boleh kosong"`
 }
 
 func (ctrl *controller) Create(c *fiber.Ctx) error {
@@ -47,7 +47,13 @@ func (ctrl *controller) Create(c *fiber.Ctx) error {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	if err := ctrl.service.Create(c.Context(), &request); err != nil {
+	formHeader, err := c.FormFile("image")
+	if err != nil {
+		response := helper.ResponseFailed("Image file is required")
+		return c.Status(fiber.StatusBadRequest).JSON(response)
+	}
+
+	if err := ctrl.service.Create(c.Context(), &request, formHeader); err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 

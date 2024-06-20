@@ -2,8 +2,10 @@ package cloudstorage
 
 import (
 	"context"
+	"mime/multipart"
 
 	"github.com/ariefro/buycut-api/config"
+	"github.com/ariefro/buycut-api/pkg/helper"
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
@@ -15,26 +17,30 @@ type UploadArgs struct {
 	Config *config.CloudinaryConfig
 }
 
-func setupCloudinary(config *config.CloudinaryConfig) (*cloudinary.Cloudinary, error) {
-	cld, err := cloudinary.NewFromParams(config.CloudinaryCloudName, config.CloudinaryApiKey, config.CloudinarySecretKey)
+type UploadImageArgs struct {
+	File *multipart.FileHeader
+	Slug string
+}
+
+func SetupCloudinary(cfg *config.CloudinaryConfig) (*cloudinary.Cloudinary, error) {
+	cld, err := cloudinary.NewFromParams(cfg.CloudinaryCloudName, cfg.CloudinaryApiKey, cfg.CloudinarySecretKey)
 	if err != nil {
 		return nil, err
 	}
-
 	return cld, nil
 }
 
-func Upload(publicID string, args *UploadArgs) (string, error) {
+func UploadFile(args *UploadArgs) (string, error) {
 	ctx := context.Background()
-	cld, err := setupCloudinary(args.Config)
+	cld, err := SetupCloudinary(args.Config)
 	if err != nil {
 		return "", err
 	}
 
 	uploadParams := uploader.UploadParams{
-		PublicID: publicID,
+		PublicID: args.Slug,
 		Tags:     api.CldAPIArray{args.Slug},
-		Folder:   args.Config.CloudinaryBuycutFolder + "/" + args.Slug,
+		Folder:   args.Config.CloudinaryBuycutFolder,
 	}
 
 	result, err := cld.Upload.Upload(ctx, args.File, uploadParams)
@@ -42,6 +48,23 @@ func Upload(publicID string, args *UploadArgs) (string, error) {
 		return "", err
 	}
 
-	imageURL := result.SecureURL
-	return imageURL, nil
+	return result.SecureURL, nil
+}
+
+func UploadImage(ctx context.Context, args *UploadImageArgs, config *config.CloudinaryConfig) (string, error) {
+	if args.File == nil {
+		return "", nil
+	}
+
+	if err := helper.ValidateImage(args.File); err != nil {
+		return "", err
+	}
+
+	imageFile, err := args.File.Open()
+	if err != nil {
+		return "", err
+	}
+	defer imageFile.Close()
+
+	return UploadFile(&UploadArgs{File: imageFile, Slug: args.Slug, Config: config})
 }
