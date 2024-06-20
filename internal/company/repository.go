@@ -13,6 +13,7 @@ import (
 
 type Repository interface {
 	Create(ctx context.Context, companies *entity.Company) error
+	CountCompanies(ctx context.Context, keyword string) (int64, error)
 	Count(ctx context.Context, args *getCompaniesRequest) (int64, error)
 	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
 	FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error)
@@ -36,6 +37,15 @@ func (r *repository) Create(ctx context.Context, companies *entity.Company) erro
 	return nil
 }
 
+func (r *repository) CountCompanies(ctx context.Context, keyword string) (int64, error) {
+	var count int64
+	key := "%" + keyword + "%"
+	if err := r.db.WithContext(ctx).Model(&entity.Company{}).Where("LOWER(name) LIKE LOWER(?)", key).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 func (r *repository) Count(ctx context.Context, args *getCompaniesRequest) (int64, error) {
 	var count int64
 	query := r.db.WithContext(ctx).Model(&entity.Company{})
@@ -43,7 +53,7 @@ func (r *repository) Count(ctx context.Context, args *getCompaniesRequest) (int6
 	keyword := "%" + args.Keyword + "%"
 	if args.Keyword != "" {
 		query = query.Joins("LEFT JOIN products ON products.company_id = companies.id").
-			Where("LOWER(companies.name) = LOWER(?) OR LOWER(products.name) = LOWER(?)", keyword, keyword)
+			Where("LOWER(companies.name) LIKE LOWER(?) OR LOWER(products.name) LIKE LOWER(?)", keyword, keyword)
 	}
 
 	if err := query.Count(&count).Error; err != nil {
@@ -52,6 +62,7 @@ func (r *repository) Count(ctx context.Context, args *getCompaniesRequest) (int6
 
 	return count, nil
 }
+
 func (r *repository) Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error) {
 	var companies []*entity.Company
 	query := r.db.WithContext(ctx).Model(&entity.Company{}).Preload("Products")

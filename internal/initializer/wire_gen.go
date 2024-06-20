@@ -28,7 +28,7 @@ func InitializedServer() error {
 	companyService := company.NewService(configConfig, companyRepository)
 	companyController := company.NewController(companyService)
 	productRepository := product.NewRepository(db)
-	productService := product.NewService(configConfig, productRepository)
+	productService := product.NewService(configConfig, productRepository, companyRepository)
 	productController := product.NewController(productService, companyService)
 	error2 := server.NewFiberServer(configConfig, controller, companyController, productController)
 	return error2

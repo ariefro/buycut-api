@@ -3,6 +3,7 @@ package product
 import (
 	"github.com/ariefro/buycut-api/internal/company"
 	"github.com/ariefro/buycut-api/pkg/helper"
+	"github.com/ariefro/buycut-api/pkg/pagination"
 	"github.com/gofiber/fiber/v2"
 	"github.com/usepzaka/validator"
 )
@@ -10,6 +11,7 @@ import (
 type Controller interface {
 	Create(c *fiber.Ctx) error
 	FindByKeyword(c *fiber.Ctx) error
+	FindAll(c *fiber.Ctx) error
 }
 
 type controller struct {
@@ -28,6 +30,20 @@ type getProductByKeywordRequest struct {
 type createProductsRequest struct {
 	CompanyID uint   `form:"company_id" validate:"required~company id tidak boleh kosong"`
 	Name      string `form:"name" validate:"required~nama perusahaan tidak boleh kosong"`
+}
+
+type boycottedResult struct {
+	ID          uint   `json:"id"`
+	Name        string `json:"name"`
+	Slug        string `json:"slug"`
+	Description string `json:"description"`
+	ImageURL    string `json:"image_url"`
+	Type        string `json:"type"` // Either "company" or "product"
+}
+
+type boycottedCountResult struct {
+	CompanyCount int64 `json:"company_count"`
+	ProductCount int64 `json:"product_count"`
 }
 
 func (ctrl *controller) Create(c *fiber.Ctx) error {
@@ -74,5 +90,32 @@ func (ctrl *controller) FindByKeyword(c *fiber.Ctx) error {
 	}
 
 	res := helper.ResponseSuccess("Merek ini masuk dalam daftar boikot!", result)
+	return c.Status(fiber.StatusOK).JSON(res)
+}
+
+func (ctrl *controller) FindAll(c *fiber.Ctx) error {
+	var request getProductByKeywordRequest
+	if err := c.BodyParser(&request); err != nil {
+		res := helper.ResponseFailed(err.Error())
+		return c.Status(fiber.StatusBadRequest).JSON(res)
+	}
+
+	count, err := ctrl.service.CountAll(c.Context(), &request)
+	if err != nil {
+		return helper.GenerateErrorResponse(c, err.Error())
+	}
+
+	pages := pagination.NewFromRequest(c, int(count))
+	paginationParams := pagination.PaginationParams{
+		Offset: pages.Offset(),
+		Limit:  pages.Size(),
+	}
+
+	results, err := ctrl.service.FindAll(c.Context(), &request, &paginationParams)
+	if err != nil {
+		return helper.GenerateErrorResponse(c, err.Error())
+	}
+
+	res := helper.ResponseSuccess("Berhasil memuat daftar merek yang diboikot", results)
 	return c.Status(fiber.StatusOK).JSON(res)
 }
