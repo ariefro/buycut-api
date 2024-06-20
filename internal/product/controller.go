@@ -1,6 +1,8 @@
 package product
 
 import (
+	"mime/multipart"
+
 	"github.com/ariefro/buycut-api/internal/company"
 	"github.com/ariefro/buycut-api/pkg/helper"
 	"github.com/ariefro/buycut-api/pkg/pagination"
@@ -12,6 +14,7 @@ type Controller interface {
 	Create(c *fiber.Ctx) error
 	FindByKeyword(c *fiber.Ctx) error
 	FindAll(c *fiber.Ctx) error
+	Update(c *fiber.Ctx) error
 }
 
 type controller struct {
@@ -29,7 +32,17 @@ type getProductByKeywordRequest struct {
 
 type createProductsRequest struct {
 	CompanyID uint   `form:"company_id" validate:"required~company id tidak boleh kosong"`
-	Name      string `form:"name" validate:"required~nama perusahaan tidak boleh kosong"`
+	Name      string `form:"name" validate:"required~nama merek tidak boleh kosong"`
+}
+
+type updateProductsRequest struct {
+	Name      string `form:"name" validate:"required~nama merek tidak boleh kosong"`
+	CompanyID *uint  `form:"company_id"`
+}
+
+type updateProductArgs struct {
+	Request    *updateProductsRequest
+	FormHeader *multipart.FileHeader
 }
 
 type boycottedResult struct {
@@ -117,5 +130,30 @@ func (ctrl *controller) FindAll(c *fiber.Ctx) error {
 	}
 
 	res := helper.ResponseSuccess("Berhasil memuat daftar merek yang diboikot", results)
+	return c.Status(fiber.StatusOK).JSON(res)
+}
+
+func (ctrl *controller) Update(c *fiber.Ctx) error {
+	var request updateProductsRequest
+	if err := c.BodyParser(&request); err != nil {
+		response := helper.ResponseFailed(err.Error())
+		return c.Status(fiber.StatusBadRequest).JSON(response)
+	}
+
+	if err := validator.ValidateStruct(request); err != nil {
+		response := helper.ResponseFailed(err.Error())
+		return c.Status(fiber.StatusBadRequest).JSON(response)
+	}
+
+	productID := helper.ParseStringToUint(c.Params("id"))
+	formHeader, _ := c.FormFile("image")
+	if err := ctrl.service.Update(c.Context(), productID, &updateProductArgs{
+		Request:    &request,
+		FormHeader: formHeader,
+	}); err != nil {
+		return helper.GenerateErrorResponse(c, err.Error())
+	}
+
+	res := helper.ResponseSuccess("Data product berhasil diperbarui", nil)
 	return c.Status(fiber.StatusOK).JSON(res)
 }

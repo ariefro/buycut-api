@@ -31,6 +31,7 @@ func setupRouter(
 	// products
 	productsApi := api.Group("/products")
 	productsApi.Post("/", middleware.Auth(), productController.Create)
+	productsApi.Put("/:id", middleware.Auth(), productController.Update)
 
 	brandsApi := api.Group("/brands")
 	brandsApi.Post("/boycotted", productController.FindAll)

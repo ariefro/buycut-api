@@ -9,7 +9,7 @@ const (
 	ProductNotFound = "Produk tidak ditemukan dalam daftar boikot"
 
 	InvalidImageFile   = "file gambar tidak valid"
-	FileSizeIsTooLarge = "ukuran file seharusnya tidak melebihi 10 MB"
+	FileSizeIsTooLarge = "ukuran file seharusnya tidak melebihi 1 MB"
 
 	MissingJWT = "Missing or malformed JWT"
 )

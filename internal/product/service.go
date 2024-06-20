@@ -21,6 +21,7 @@ type Service interface {
 	FindByKeyword(ctx context.Context, args *getProductByKeywordRequest) (interface{}, error)
 	FindAll(ctx context.Context, args *getProductByKeywordRequest, paginationParams *pagination.PaginationParams) ([]*boycottedResult, error)
 	CountAll(ctx context.Context, args *getProductByKeywordRequest) (int64, error)
+	Update(ctx context.Context, productID uint, args *updateProductArgs) error
 }
 
 type service struct {
@@ -119,6 +120,32 @@ func (s *service) CountAll(ctx context.Context, args *getProductByKeywordRequest
 	results := companyCount + productCount
 
 	return results, nil
+}
+
+func (s *service) Update(ctx context.Context, productID uint, args *updateProductArgs) error {
+	dataToUpdate := map[string]interface{}{}
+
+	slug := helper.GenerateSlug(args.Request.Name)
+	dataToUpdate["name"] = strings.ToLower(args.Request.Name)
+	dataToUpdate["slug"] = slug
+
+	if args.Request.CompanyID != nil {
+		dataToUpdate["company_id"] = args.Request.CompanyID
+	}
+
+	if args.FormHeader != nil {
+		imageURL, err := cloudstorage.UploadImage(ctx, &cloudstorage.UploadImageArgs{
+			File: args.FormHeader,
+			Slug: slug,
+		}, s.configureCloudinary())
+		if err != nil {
+			return err
+		}
+
+		dataToUpdate["image_url"] = imageURL
+	}
+
+	return s.repo.Update(ctx, productID, dataToUpdate)
 }
 
 func (s *service) configureCloudinary() *config.CloudinaryConfig {

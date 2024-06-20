@@ -2,8 +2,10 @@ package product
 
 import (
 	"context"
+	"errors"
 
 	"github.com/ariefro/buycut-api/internal/entity"
+	"github.com/ariefro/buycut-api/pkg/common"
 	"github.com/ariefro/buycut-api/pkg/pagination"
 	"gorm.io/gorm"
 )
@@ -13,6 +15,7 @@ type Repository interface {
 	FindByKeyword(ctx context.Context, keyword string) ([]*entity.Company, []*entity.Product, error)
 	FindAll(ctx context.Context, args *getProductByKeywordRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, []*entity.Product, error)
 	CountProducts(ctx context.Context, keyword string) (int64, error)
+	Update(ctx context.Context, productID uint, data map[string]interface{}) error
 }
 
 type repository struct {
@@ -73,4 +76,21 @@ func (r *repository) CountProducts(ctx context.Context, keyword string) (int64, 
 		return 0, err
 	}
 	return count, nil
+}
+
+func (r *repository) Update(ctx context.Context, productID uint, data map[string]interface{}) error {
+	result := r.db.WithContext(ctx).Model(&entity.Product{}).Where("id = ?", productID).Updates(data)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrForeignKeyViolated) {
+			return errors.New(common.CompanyNotFound)
+		}
+
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return errors.New(common.ProductNotFound)
+	}
+
+	return nil
 }
