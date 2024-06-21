@@ -19,7 +19,7 @@ type Service interface {
 	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
 	FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error)
 	Update(ctx context.Context, args *updateCompaniesRequest) error
-	Delete(ctx context.Context, companyID uint) error
+	Delete(ctx context.Context, company *entity.Company) error
 }
 
 type service struct {
@@ -39,8 +39,9 @@ type uploadImageArgs struct {
 func (s *service) Create(ctx context.Context, args *createCompaniesRequest, formHeader *multipart.FileHeader) error {
 	slug := helper.GenerateSlug(args.Name)
 	imageURL, err := cloudstorage.UploadImage(ctx, &cloudstorage.UploadImageArgs{
-		File: formHeader,
-		Slug: slug,
+		Company: args.Name,
+		File:    formHeader,
+		Slug:    slug,
 	}, s.configureCloudinary())
 	if err != nil {
 		return err
@@ -53,7 +54,20 @@ func (s *service) Create(ctx context.Context, args *createCompaniesRequest, form
 		ImageURL:    imageURL,
 	}
 
-	return s.repo.Create(ctx, company)
+	err = s.repo.Create(ctx, company)
+	if err != nil {
+		if errDeleteFile := cloudstorage.DeleteFile(&cloudstorage.DeleteArgs{
+			CompanyName: args.Name,
+			Config:      s.configureCloudinary(),
+			Slug:        slug,
+		}); errDeleteFile != nil {
+			return errDeleteFile
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 func (s *service) Count(ctx context.Context, args *getCompaniesRequest) (int64, error) {
@@ -78,8 +92,21 @@ func (s *service) Update(ctx context.Context, args *updateCompaniesRequest) erro
 	return s.repo.Update(ctx, args.CompanyID, dataToUpdate)
 }
 
-func (s *service) Delete(ctx context.Context, companyID uint) error {
-	return s.repo.Delete(ctx, companyID)
+func (s *service) Delete(ctx context.Context, company *entity.Company) error {
+	err := s.repo.Delete(ctx, company.ID)
+	if err != nil {
+		return err
+	} else {
+		if errDeleteFile := cloudstorage.DeleteFile(&cloudstorage.DeleteArgs{
+			CompanyName: company.Name,
+			Config:      s.configureCloudinary(),
+			Slug:        company.Slug,
+		}); errDeleteFile != nil {
+			return errDeleteFile
+		}
+	}
+
+	return nil
 }
 
 func (s *service) configureCloudinary() *config.CloudinaryConfig {

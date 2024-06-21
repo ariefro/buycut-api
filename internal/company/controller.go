@@ -124,8 +124,12 @@ func (ctrl *controller) Update(c *fiber.Ctx) error {
 
 func (ctrl *controller) Delete(c *fiber.Ctx) error {
 	companyID := helper.ParseStringToUint(c.Params("id"))
+	company, err := ctrl.service.FindOneByID(c.Context(), companyID)
+	if err != nil {
+		return helper.GenerateErrorResponse(c, err.Error())
+	}
 
-	if err := ctrl.service.Delete(c.Context(), companyID); err != nil {
+	if err := ctrl.service.Delete(c.Context(), company); err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 

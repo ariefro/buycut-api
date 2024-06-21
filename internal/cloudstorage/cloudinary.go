@@ -2,6 +2,7 @@ package cloudstorage
 
 import (
 	"context"
+	"fmt"
 	"mime/multipart"
 
 	"github.com/ariefro/buycut-api/config"
@@ -50,7 +51,7 @@ func UploadFile(args *UploadArgs) (string, error) {
 	uploadParams := uploader.UploadParams{
 		PublicID: args.Slug,
 		Tags:     api.CldAPIArray{args.CompanyName},
-		Folder:   args.Config.CloudinaryBuycutFolder,
+		Folder:   args.Config.CloudinaryBuycutFolder + "/" + args.CompanyName,
 	}
 
 	result, err := cld.Upload.Upload(ctx, args.File, uploadParams)
@@ -68,7 +69,8 @@ func DeleteFile(args *DeleteArgs) error {
 		return err
 	}
 
-	destroyParams := uploader.DestroyParams{PublicID: args.Config.CloudinaryBuycutFolder + "/" + args.CompanyName}
+	publicID := fmt.Sprintf("%s/%s/%s", args.Config.CloudinaryBuycutFolder, args.CompanyName, args.Slug)
+	destroyParams := uploader.DestroyParams{PublicID: publicID}
 	_, err = cld.Upload.Destroy(ctx, destroyParams)
 	if err != nil {
 		return err

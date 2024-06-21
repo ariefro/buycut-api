@@ -107,7 +107,7 @@ func (r *repository) Update(ctx context.Context, companyID uint, data map[string
 }
 
 func (r *repository) Delete(ctx context.Context, companyID uint) error {
-	result := r.db.WithContext(ctx).Delete(&entity.Company{}, companyID)
+	result := r.db.WithContext(ctx).Delete(&entity.Company{}, "id = ?", companyID)
 	if result.Error != nil {
 		return result.Error
 	}
