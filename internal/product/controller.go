@@ -4,6 +4,7 @@ import (
 	"mime/multipart"
 
 	"github.com/ariefro/buycut-api/internal/company"
+	"github.com/ariefro/buycut-api/internal/entity"
 	"github.com/ariefro/buycut-api/pkg/helper"
 	"github.com/ariefro/buycut-api/pkg/pagination"
 	"github.com/gofiber/fiber/v2"
@@ -35,12 +36,19 @@ type createProductsRequest struct {
 	Name      string `form:"name" validate:"required~nama merek tidak boleh kosong"`
 }
 
+type createProductArgs struct {
+	CompanyName string
+	FormHeader  *multipart.FileHeader
+	Request     *createProductsRequest
+}
+
 type updateProductsRequest struct {
 	Name      string `form:"name" validate:"required~nama merek tidak boleh kosong"`
 	CompanyID *uint  `form:"company_id"`
 }
 
 type updateProductArgs struct {
+	Product    *entity.Product
 	Request    *updateProductsRequest
 	FormHeader *multipart.FileHeader
 }
@@ -71,7 +79,7 @@ func (ctrl *controller) Create(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(response)
 	}
 
-	_, err := ctrl.companyService.FindOneByID(c.Context(), request.CompanyID)
+	company, err := ctrl.companyService.FindOneByID(c.Context(), request.CompanyID)
 	if err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
@@ -82,7 +90,11 @@ func (ctrl *controller) Create(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(response)
 	}
 
-	if err := ctrl.service.Create(c.Context(), &request, formHeader); err != nil {
+	if err := ctrl.service.Create(c.Context(), &createProductArgs{
+		CompanyName: company.Name,
+		FormHeader:  formHeader,
+		Request:     &request,
+	}); err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
@@ -145,9 +157,15 @@ func (ctrl *controller) Update(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(response)
 	}
 
+	product, err := ctrl.service.FindOneByID(c.Context(), *request.CompanyID)
+	if err != nil {
+		return helper.GenerateErrorResponse(c, err.Error())
+	}
+
 	productID := helper.ParseStringToUint(c.Params("id"))
 	formHeader, _ := c.FormFile("image")
 	if err := ctrl.service.Update(c.Context(), productID, &updateProductArgs{
+		Product:    product,
 		Request:    &request,
 		FormHeader: formHeader,
 	}); err != nil {

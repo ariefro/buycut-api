@@ -3,7 +3,6 @@ package product
 import (
 	"context"
 	"errors"
-	"mime/multipart"
 	"sort"
 	"strings"
 
@@ -17,8 +16,9 @@ import (
 )
 
 type Service interface {
-	Create(ctx context.Context, args *createProductsRequest, formHeader *multipart.FileHeader) error
+	Create(ctx context.Context, args *createProductArgs) error
 	FindByKeyword(ctx context.Context, args *getProductByKeywordRequest) (interface{}, error)
+	FindOneByID(ctx context.Context, productID uint) (*entity.Product, error)
 	FindAll(ctx context.Context, args *getProductByKeywordRequest, paginationParams *pagination.PaginationParams) ([]*boycottedResult, error)
 	CountAll(ctx context.Context, args *getProductByKeywordRequest) (int64, error)
 	Update(ctx context.Context, productID uint, args *updateProductArgs) error
@@ -34,24 +34,28 @@ func NewService(config *config.Config, repo Repository, companyRepo company.Repo
 	return &service{config, repo, companyRepo}
 }
 
-func (s *service) Create(ctx context.Context, args *createProductsRequest, formHeader *multipart.FileHeader) error {
-	slug := helper.GenerateSlug(args.Name)
+func (s *service) Create(ctx context.Context, args *createProductArgs) error {
+	slug := helper.GenerateSlug(args.Request.Name)
 	imageURL, err := cloudstorage.UploadImage(ctx, &cloudstorage.UploadImageArgs{
-		File: formHeader,
+		File: args.FormHeader,
 		Slug: slug,
-	}, s.configureCloudinary())
+	}, s.configureCloudinary(args.CompanyName))
 	if err != nil {
 		return err
 	}
 
 	product := &entity.Product{
-		Name:      strings.ToLower(args.Name),
+		Name:      strings.ToLower(args.Request.Name),
 		Slug:      slug,
-		CompanyID: args.CompanyID,
+		CompanyID: args.Request.CompanyID,
 		ImageURL:  imageURL,
 	}
 
 	return s.repo.Create(ctx, product)
+}
+
+func (s *service) FindOneByID(ctx context.Context, productID uint) (*entity.Product, error) {
+	return s.repo.FindOneByID(ctx, productID)
 }
 
 func (s *service) FindByKeyword(ctx context.Context, args *getProductByKeywordRequest) (interface{}, error) {
@@ -137,7 +141,7 @@ func (s *service) Update(ctx context.Context, productID uint, args *updateProduc
 		imageURL, err := cloudstorage.UploadImage(ctx, &cloudstorage.UploadImageArgs{
 			File: args.FormHeader,
 			Slug: slug,
-		}, s.configureCloudinary())
+		}, s.configureCloudinary(args.Product.Company.Name))
 		if err != nil {
 			return err
 		}
@@ -148,12 +152,12 @@ func (s *service) Update(ctx context.Context, productID uint, args *updateProduc
 	return s.repo.Update(ctx, productID, dataToUpdate)
 }
 
-func (s *service) configureCloudinary() *config.CloudinaryConfig {
+func (s *service) configureCloudinary(companyName string) *config.CloudinaryConfig {
 	var config = &config.CloudinaryConfig{
 		CloudinaryCloudName:    s.config.CloudinaryCloudName,
 		CloudinaryApiKey:       s.config.CloudinaryApiKey,
 		CloudinarySecretKey:    s.config.CloudinarySecretKey,
-		CloudinaryBuycutFolder: s.config.CloudinaryBuycutFolder,
+		CloudinaryBuycutFolder: s.config.CloudinaryBuycutFolder + "/" + companyName,
 	}
 
 	return config

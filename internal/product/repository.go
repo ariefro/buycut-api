@@ -13,6 +13,7 @@ import (
 type Repository interface {
 	Create(ctx context.Context, products *entity.Product) error
 	FindByKeyword(ctx context.Context, keyword string) ([]*entity.Company, []*entity.Product, error)
+	FindOneByID(ctx context.Context, productID uint) (*entity.Product, error)
 	FindAll(ctx context.Context, args *getProductByKeywordRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, []*entity.Product, error)
 	CountProducts(ctx context.Context, keyword string) (int64, error)
 	Update(ctx context.Context, productID uint, data map[string]interface{}) error
@@ -49,6 +50,15 @@ func (r *repository) FindByKeyword(ctx context.Context, keyword string) ([]*enti
 	}
 
 	return companies, products, nil
+}
+
+func (r *repository) FindOneByID(ctx context.Context, productID uint) (*entity.Product, error) {
+	var product *entity.Product
+	if err := r.db.WithContext(ctx).Model(&entity.Product{}).Preload("Company").First(&product, "id = ?", productID).Error; err != nil {
+		return nil, err
+	}
+
+	return product, nil
 }
 
 func (r *repository) FindAll(ctx context.Context, args *getProductByKeywordRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, []*entity.Product, error) {
