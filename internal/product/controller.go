@@ -16,6 +16,7 @@ type Controller interface {
 	FindByKeyword(c *fiber.Ctx) error
 	FindAll(c *fiber.Ctx) error
 	Update(c *fiber.Ctx) error
+	Delete(c *fiber.Ctx) error
 }
 
 type controller struct {
@@ -157,12 +158,12 @@ func (ctrl *controller) Update(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(response)
 	}
 
-	product, err := ctrl.service.FindOneByID(c.Context(), *request.CompanyID)
+	productID := helper.ParseStringToUint(c.Params("id"))
+	product, err := ctrl.service.FindOneByID(c.Context(), productID)
 	if err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	productID := helper.ParseStringToUint(c.Params("id"))
 	formHeader, _ := c.FormFile("image")
 	if err := ctrl.service.Update(c.Context(), productID, &updateProductArgs{
 		Product:    product,
@@ -173,5 +174,20 @@ func (ctrl *controller) Update(c *fiber.Ctx) error {
 	}
 
 	res := helper.ResponseSuccess("Data product berhasil diperbarui", nil)
+	return c.Status(fiber.StatusOK).JSON(res)
+}
+
+func (ctrl *controller) Delete(c *fiber.Ctx) error {
+	productID := helper.ParseStringToUint(c.Params("id"))
+	product, err := ctrl.service.FindOneByID(c.Context(), productID)
+	if err != nil {
+		return helper.GenerateErrorResponse(c, err.Error())
+	}
+
+	if err := ctrl.service.Delete(c.Context(), product); err != nil {
+		return helper.GenerateErrorResponse(c, err.Error())
+	}
+
+	res := helper.ResponseSuccess("Berhasil menghapus merek dari daftar boikot", nil)
 	return c.Status(fiber.StatusOK).JSON(res)
 }

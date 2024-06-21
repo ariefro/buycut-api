@@ -22,6 +22,7 @@ type Service interface {
 	FindAll(ctx context.Context, args *getProductByKeywordRequest, paginationParams *pagination.PaginationParams) ([]*boycottedResult, error)
 	CountAll(ctx context.Context, args *getProductByKeywordRequest) (int64, error)
 	Update(ctx context.Context, productID uint, args *updateProductArgs) error
+	Delete(ctx context.Context, product *entity.Product) error
 }
 
 type service struct {
@@ -37,9 +38,10 @@ func NewService(config *config.Config, repo Repository, companyRepo company.Repo
 func (s *service) Create(ctx context.Context, args *createProductArgs) error {
 	slug := helper.GenerateSlug(args.Request.Name)
 	imageURL, err := cloudstorage.UploadImage(ctx, &cloudstorage.UploadImageArgs{
-		File: args.FormHeader,
-		Slug: slug,
-	}, s.configureCloudinary(args.CompanyName))
+		Company: args.CompanyName,
+		File:    args.FormHeader,
+		Slug:    slug,
+	}, s.configureCloudinary())
 	if err != nil {
 		return err
 	}
@@ -138,10 +140,20 @@ func (s *service) Update(ctx context.Context, productID uint, args *updateProduc
 	}
 
 	if args.FormHeader != nil {
+		// jika nama dari produk tidak sama dengan nama dari request, maka hapus file yang lama
+		if args.Product.Name != args.Request.Name {
+			cloudstorage.DeleteFile(&cloudstorage.DeleteArgs{
+				CompanyName: args.Product.Company.Name,
+				Config:      s.configureCloudinary(),
+				Slug:        args.Product.Slug,
+			})
+		}
+
 		imageURL, err := cloudstorage.UploadImage(ctx, &cloudstorage.UploadImageArgs{
-			File: args.FormHeader,
-			Slug: slug,
-		}, s.configureCloudinary(args.Product.Company.Name))
+			Company: args.Product.Company.Name,
+			File:    args.FormHeader,
+			Slug:    slug,
+		}, s.configureCloudinary())
 		if err != nil {
 			return err
 		}
@@ -152,12 +164,29 @@ func (s *service) Update(ctx context.Context, productID uint, args *updateProduc
 	return s.repo.Update(ctx, productID, dataToUpdate)
 }
 
-func (s *service) configureCloudinary(companyName string) *config.CloudinaryConfig {
+func (s *service) Delete(ctx context.Context, product *entity.Product) error {
+	err := s.repo.Delete(ctx, product.ID)
+	if err != nil {
+		return err
+	} else {
+		if errDeleteFile := cloudstorage.DeleteFile(&cloudstorage.DeleteArgs{
+			CompanyName: product.Company.Name,
+			Config:      s.configureCloudinary(),
+			Slug:        product.Slug,
+		}); errDeleteFile != nil {
+			return errDeleteFile
+		}
+	}
+
+	return nil
+}
+
+func (s *service) configureCloudinary() *config.CloudinaryConfig {
 	var config = &config.CloudinaryConfig{
 		CloudinaryCloudName:    s.config.CloudinaryCloudName,
 		CloudinaryApiKey:       s.config.CloudinaryApiKey,
 		CloudinarySecretKey:    s.config.CloudinarySecretKey,
-		CloudinaryBuycutFolder: s.config.CloudinaryBuycutFolder + "/" + companyName,
+		CloudinaryBuycutFolder: s.config.CloudinaryBuycutFolder,
 	}
 
 	return config

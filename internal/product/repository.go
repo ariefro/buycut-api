@@ -17,6 +17,7 @@ type Repository interface {
 	FindAll(ctx context.Context, args *getProductByKeywordRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, []*entity.Product, error)
 	CountProducts(ctx context.Context, keyword string) (int64, error)
 	Update(ctx context.Context, productID uint, data map[string]interface{}) error
+	Delete(ctx context.Context, productID uint) error
 }
 
 type repository struct {
@@ -55,6 +56,10 @@ func (r *repository) FindByKeyword(ctx context.Context, keyword string) ([]*enti
 func (r *repository) FindOneByID(ctx context.Context, productID uint) (*entity.Product, error) {
 	var product *entity.Product
 	if err := r.db.WithContext(ctx).Model(&entity.Product{}).Preload("Company").First(&product, "id = ?", productID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New(common.ProductNotFound)
+		}
+
 		return nil, err
 	}
 
@@ -95,6 +100,19 @@ func (r *repository) Update(ctx context.Context, productID uint, data map[string
 			return errors.New(common.CompanyNotFound)
 		}
 
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return errors.New(common.ProductNotFound)
+	}
+
+	return nil
+}
+
+func (r *repository) Delete(ctx context.Context, productID uint) error {
+	result := r.db.WithContext(ctx).Delete(&entity.Product{}, "id = ?", productID)
+	if result.Error != nil {
 		return result.Error
 	}
 
