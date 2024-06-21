@@ -29,6 +29,7 @@ func validateImageExtension(filename string) error {
 		".jpg":  {},
 		".jpeg": {},
 		".png":  {},
+		".webp": {},
 	}
 
 	ext := strings.ToLower(filepath.Ext(filename))

@@ -12,14 +12,24 @@ import (
 )
 
 type UploadArgs struct {
-	File   interface{}
+	File              interface{}
+	CompanyName, Slug string
+	Config            *config.CloudinaryConfig
+}
+
+type UpdateArgs struct {
 	Slug   string
 	Config *config.CloudinaryConfig
 }
 
+type DeleteArgs struct {
+	Config            *config.CloudinaryConfig
+	CompanyName, Slug string
+}
+
 type UploadImageArgs struct {
-	File *multipart.FileHeader
-	Slug string
+	File          *multipart.FileHeader
+	Company, Slug string
 }
 
 func SetupCloudinary(cfg *config.CloudinaryConfig) (*cloudinary.Cloudinary, error) {
@@ -39,7 +49,7 @@ func UploadFile(args *UploadArgs) (string, error) {
 
 	uploadParams := uploader.UploadParams{
 		PublicID: args.Slug,
-		Tags:     api.CldAPIArray{args.Slug},
+		Tags:     api.CldAPIArray{args.CompanyName},
 		Folder:   args.Config.CloudinaryBuycutFolder,
 	}
 
@@ -49,6 +59,22 @@ func UploadFile(args *UploadArgs) (string, error) {
 	}
 
 	return result.SecureURL, nil
+}
+
+func DeleteFile(args *DeleteArgs) error {
+	ctx := context.Background()
+	cld, err := SetupCloudinary(args.Config)
+	if err != nil {
+		return err
+	}
+
+	destroyParams := uploader.DestroyParams{PublicID: args.Config.CloudinaryBuycutFolder + "/" + args.CompanyName}
+	_, err = cld.Upload.Destroy(ctx, destroyParams)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func UploadImage(ctx context.Context, args *UploadImageArgs, config *config.CloudinaryConfig) (string, error) {
@@ -66,5 +92,5 @@ func UploadImage(ctx context.Context, args *UploadImageArgs, config *config.Clou
 	}
 	defer imageFile.Close()
 
-	return UploadFile(&UploadArgs{File: imageFile, Slug: args.Slug, Config: config})
+	return UploadFile(&UploadArgs{File: imageFile, Slug: args.Slug, CompanyName: args.Company, Config: config})
 }
