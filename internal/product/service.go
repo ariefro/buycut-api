@@ -38,9 +38,9 @@ func NewService(config *config.Config, repo Repository, companyRepo company.Repo
 func (s *service) Create(ctx context.Context, args *createProductArgs) error {
 	slug := helper.GenerateSlug(args.Request.Name)
 	imageURL, err := cloudstorage.UploadImage(ctx, &cloudstorage.UploadImageArgs{
-		Company: args.CompanyName,
-		File:    args.FormHeader,
-		Slug:    slug,
+		CompanyID: args.CompanyID,
+		File:      args.FormHeader,
+		Slug:      slug,
 	}, s.configureCloudinary())
 	if err != nil {
 		return err
@@ -147,16 +147,16 @@ func (s *service) Update(ctx context.Context, productID uint, args *updateProduc
 		// jika nama dari produk tidak sama dengan nama dari request, maka hapus file yang lama
 		if args.Product.Name != args.Request.Name {
 			cloudstorage.DeleteFile(&cloudstorage.DeleteArgs{
-				CompanyName: args.Product.Company.Name,
-				Config:      s.configureCloudinary(),
-				Slug:        args.Product.Slug,
+				CompanyID: args.Product.Company.ID,
+				Config:    s.configureCloudinary(),
+				Slug:      args.Product.Slug,
 			})
 		}
 
 		imageURL, err := cloudstorage.UploadImage(ctx, &cloudstorage.UploadImageArgs{
-			Company: args.Product.Company.Name,
-			File:    args.FormHeader,
-			Slug:    slug,
+			CompanyID: args.Product.Company.ID,
+			File:      args.FormHeader,
+			Slug:      slug,
 		}, s.configureCloudinary())
 		if err != nil {
 			return err
@@ -174,9 +174,9 @@ func (s *service) Delete(ctx context.Context, product *entity.Product) error {
 		return err
 	} else {
 		if errDeleteFile := cloudstorage.DeleteFile(&cloudstorage.DeleteArgs{
-			CompanyName: product.Company.Name,
-			Config:      s.configureCloudinary(),
-			Slug:        product.Slug,
+			CompanyID: product.Company.ID,
+			Config:    s.configureCloudinary(),
+			Slug:      product.Slug,
 		}); errDeleteFile != nil {
 			return errDeleteFile
 		}

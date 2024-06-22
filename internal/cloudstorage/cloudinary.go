@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"mime/multipart"
+	"strconv"
 
 	"github.com/ariefro/buycut-api/config"
 	"github.com/ariefro/buycut-api/pkg/helper"
@@ -13,9 +14,10 @@ import (
 )
 
 type UploadArgs struct {
-	File              interface{}
-	CompanyName, Slug string
-	Config            *config.CloudinaryConfig
+	File      interface{}
+	CompanyID uint
+	Slug      string
+	Config    *config.CloudinaryConfig
 }
 
 type UpdateArgs struct {
@@ -24,13 +26,15 @@ type UpdateArgs struct {
 }
 
 type DeleteArgs struct {
-	Config            *config.CloudinaryConfig
-	CompanyName, Slug string
+	CompanyID uint
+	Config    *config.CloudinaryConfig
+	Slug      string
 }
 
 type UploadImageArgs struct {
-	File          *multipart.FileHeader
-	Company, Slug string
+	CompanyID uint
+	File      *multipart.FileHeader
+	Slug      string
 }
 
 func SetupCloudinary(cfg *config.CloudinaryConfig) (*cloudinary.Cloudinary, error) {
@@ -48,10 +52,11 @@ func UploadFile(args *UploadArgs) (string, error) {
 		return "", err
 	}
 
+	companyIDStr := strconv.FormatUint(uint64(args.CompanyID), 10)
 	uploadParams := uploader.UploadParams{
 		PublicID: args.Slug,
-		Tags:     api.CldAPIArray{args.CompanyName},
-		Folder:   args.Config.CloudinaryBuycutFolder + "/" + args.CompanyName,
+		Tags:     api.CldAPIArray{companyIDStr},
+		Folder:   args.Config.CloudinaryBuycutFolder + "/" + companyIDStr,
 	}
 
 	result, err := cld.Upload.Upload(ctx, args.File, uploadParams)
@@ -69,7 +74,8 @@ func DeleteFile(args *DeleteArgs) error {
 		return err
 	}
 
-	publicID := fmt.Sprintf("%s/%s/%s", args.Config.CloudinaryBuycutFolder, args.CompanyName, args.Slug)
+	companyIDStr := strconv.FormatUint(uint64(args.CompanyID), 10)
+	publicID := fmt.Sprintf("%s/%s/%s", args.Config.CloudinaryBuycutFolder, companyIDStr, args.Slug)
 	destroyParams := uploader.DestroyParams{PublicID: publicID}
 	_, err = cld.Upload.Destroy(ctx, destroyParams)
 	if err != nil {
@@ -94,5 +100,5 @@ func UploadImage(ctx context.Context, args *UploadImageArgs, config *config.Clou
 	}
 	defer imageFile.Close()
 
-	return UploadFile(&UploadArgs{File: imageFile, Slug: args.Slug, CompanyName: args.Company, Config: config})
+	return UploadFile(&UploadArgs{File: imageFile, Slug: args.Slug, CompanyID: args.CompanyID, Config: config})
 }
