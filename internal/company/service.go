@@ -14,7 +14,7 @@ import (
 )
 
 type Service interface {
-	Create(ctx context.Context, args *createCompaniesRequest, formHeader *multipart.FileHeader) error
+	Create(ctx context.Context, args *createCompanyArgs) error
 	Count(ctx context.Context, args *getCompaniesRequest) (int64, error)
 	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
 	FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error)
@@ -36,11 +36,11 @@ type uploadImageArgs struct {
 	Slug string
 }
 
-func (s *service) Create(ctx context.Context, args *createCompaniesRequest, formHeader *multipart.FileHeader) error {
-	slug := helper.GenerateSlug(args.Name)
+func (s *service) Create(ctx context.Context, args *createCompanyArgs) error {
+	slug := helper.GenerateSlug(args.Request.Name)
 	imageURL, err := cloudstorage.UploadImage(ctx, &cloudstorage.UploadImageArgs{
-		Company: args.Name,
-		File:    formHeader,
+		Company: args.Request.Name,
+		File:    args.FormHeader,
 		Slug:    slug,
 	}, s.configureCloudinary())
 	if err != nil {
@@ -48,16 +48,17 @@ func (s *service) Create(ctx context.Context, args *createCompaniesRequest, form
 	}
 
 	company := &entity.Company{
-		Name:        strings.ToLower(args.Name),
+		Name:        strings.ToLower(args.Request.Name),
 		Slug:        slug,
-		Description: args.Description,
+		Description: args.Request.Description,
 		ImageURL:    imageURL,
+		Proof:       args.Request.Proof,
 	}
 
 	err = s.repo.Create(ctx, company)
 	if err != nil {
 		if errDeleteFile := cloudstorage.DeleteFile(&cloudstorage.DeleteArgs{
-			CompanyName: args.Name,
+			CompanyName: args.Request.Name,
 			Config:      s.configureCloudinary(),
 			Slug:        slug,
 		}); errDeleteFile != nil {

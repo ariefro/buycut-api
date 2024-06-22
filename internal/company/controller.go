@@ -1,6 +1,8 @@
 package company
 
 import (
+	"mime/multipart"
+
 	"github.com/ariefro/buycut-api/pkg/helper"
 	"github.com/ariefro/buycut-api/pkg/pagination"
 	"github.com/gofiber/fiber/v2"
@@ -23,9 +25,15 @@ func NewController(service Service) Controller {
 	return &controller{service}
 }
 
-type createCompaniesRequest struct {
-	Name        string `form:"name" validate:"required~nama perusahaan tidak boleh kosong"`
-	Description string `form:"description" validate:"required~deskripsi tidak boleh kosong"`
+type createCompanyRequest struct {
+	Name        string   `form:"name" validate:"required~nama perusahaan tidak boleh kosong"`
+	Description string   `form:"description" validate:"required~deskripsi tidak boleh kosong"`
+	Proof       []string `form:"proof" validate:"required~bukti tidak boleh kosong"`
+}
+
+type createCompanyArgs struct {
+	FormHeader *multipart.FileHeader
+	Request    *createCompanyRequest
 }
 
 type getCompaniesRequest struct {
@@ -38,7 +46,7 @@ type updateCompaniesRequest struct {
 }
 
 func (ctrl *controller) Create(c *fiber.Ctx) error {
-	var request createCompaniesRequest
+	var request createCompanyRequest
 	if err := c.BodyParser(&request); err != nil {
 		response := helper.ResponseFailed(err.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(response)
@@ -55,7 +63,10 @@ func (ctrl *controller) Create(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(response)
 	}
 
-	if err := ctrl.service.Create(c.Context(), &request, formHeader); err != nil {
+	if err := ctrl.service.Create(c.Context(), &createCompanyArgs{
+		FormHeader: formHeader,
+		Request:    &request,
+	}); err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 

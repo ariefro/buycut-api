@@ -89,6 +89,8 @@ func (s *service) FindAll(ctx context.Context, args *getProductByKeywordRequest,
 			Slug:        company.Slug,
 			Description: company.Description,
 			ImageURL:    company.ImageURL,
+			Proof:       company.Proof,
+			Company:     nil,
 			Type:        "company",
 		})
 	}
@@ -100,6 +102,8 @@ func (s *service) FindAll(ctx context.Context, args *getProductByKeywordRequest,
 			Slug:        product.Slug,
 			Description: product.Company.Description,
 			ImageURL:    product.ImageURL,
+			Proof:       product.Company.Proof,
+			Company:     product.Company,
 			Type:        "product",
 		})
 	}

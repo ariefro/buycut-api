@@ -55,12 +55,14 @@ type updateProductArgs struct {
 }
 
 type boycottedResult struct {
-	ID          uint   `json:"id"`
-	Name        string `json:"name"`
-	Slug        string `json:"slug"`
-	Description string `json:"description"`
-	ImageURL    string `json:"image_url"`
-	Type        string `json:"type"` // Either "company" or "product"
+	ID          uint            `json:"id"`
+	Name        string          `json:"name"`
+	Slug        string          `json:"slug"`
+	Description string          `json:"description"`
+	ImageURL    string          `json:"image_url"`
+	Proof       []string        `json:"proof"`
+	Company     *entity.Company `json:"company"`
+	Type        string          `json:"type"` // Either "company" or "product"
 }
 
 type boycottedCountResult struct {
