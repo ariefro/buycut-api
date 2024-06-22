@@ -18,7 +18,8 @@ type Repository interface {
 	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
 	FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error)
 	Update(ctx context.Context, companyID uint, data map[string]interface{}) error
-	Delete(ctx context.Context, companyID uint) error
+	DeleteAssociateCompanyProductsInTx(ctx context.Context, tx *gorm.DB, companyID uint) error
+	DeleteInTx(ctx context.Context, tx *gorm.DB, companyID uint) error
 }
 
 type repository struct {
@@ -106,8 +107,20 @@ func (r *repository) Update(ctx context.Context, companyID uint, data map[string
 	return nil
 }
 
-func (r *repository) Delete(ctx context.Context, companyID uint) error {
-	result := r.db.WithContext(ctx).Delete(&entity.Company{}, "id = ?", companyID)
+func (r *repository) DeleteAssociateCompanyProductsInTx(ctx context.Context, tx *gorm.DB, companyID uint) error {
+	if err := tx.WithContext(ctx).Delete(&entity.Product{}, "company_id = ?", companyID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New(common.CompanyNotFound)
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+func (r *repository) DeleteInTx(ctx context.Context, tx *gorm.DB, companyID uint) error {
+	result := tx.WithContext(ctx).Delete(&entity.Company{}, "id = ?", companyID)
 	if result.Error != nil {
 		return result.Error
 	}

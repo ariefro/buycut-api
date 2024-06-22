@@ -25,7 +25,7 @@ func InitializedServer() error {
 	service := user.NewService(configConfig, repository)
 	controller := user.NewController(service)
 	companyRepository := company.NewRepository(db)
-	companyService := company.NewService(configConfig, companyRepository)
+	companyService := company.NewService(db, configConfig, companyRepository)
 	companyController := company.NewController(companyService)
 	productRepository := product.NewRepository(db)
 	productService := product.NewService(configConfig, productRepository, companyRepository)

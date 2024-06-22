@@ -3,7 +3,6 @@ module github.com/ariefro/buycut-api
 go 1.22.4
 
 require (
-	github.com/cloudinary/cloudinary-go v1.7.0
 	github.com/cloudinary/cloudinary-go/v2 v2.7.0
 	github.com/gofiber/fiber/v2 v2.52.4
 	github.com/gofiber/jwt/v3 v3.3.10

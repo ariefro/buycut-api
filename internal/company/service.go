@@ -11,6 +11,7 @@ import (
 	"github.com/ariefro/buycut-api/pkg/common"
 	"github.com/ariefro/buycut-api/pkg/helper"
 	"github.com/ariefro/buycut-api/pkg/pagination"
+	"gorm.io/gorm"
 )
 
 type Service interface {
@@ -23,12 +24,13 @@ type Service interface {
 }
 
 type service struct {
+	db     *gorm.DB
 	config *config.Config
 	repo   Repository
 }
 
-func NewService(config *config.Config, repo Repository) Service {
-	return &service{config, repo}
+func NewService(db *gorm.DB, config *config.Config, repo Repository) Service {
+	return &service{db, config, repo}
 }
 
 type uploadImageArgs struct {
@@ -101,17 +103,32 @@ func (s *service) Update(ctx context.Context, args *updateCompanyRequest) error 
 }
 
 func (s *service) Delete(ctx context.Context, company *entity.Company) error {
-	err := s.repo.Delete(ctx, company.ID)
-	if err != nil {
-		return err
-	} else {
-		if errDeleteFile := cloudstorage.DeleteFile(&cloudstorage.DeleteArgs{
-			CompanyID: company.ID,
-			Config:    s.configureCloudinary(),
-			Slug:      company.Slug,
-		}); errDeleteFile != nil {
-			return errDeleteFile
+	if errTx := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := s.repo.DeleteAssociateCompanyProductsInTx(ctx, tx, company.ID); err != nil {
+			return err
 		}
+
+		if err := s.repo.DeleteInTx(ctx, tx, company.ID); err != nil {
+			return err
+		}
+
+		return nil
+	}); errTx != nil {
+		return errTx
+	}
+
+	if err := cloudstorage.DeleteAssetsByTag(&cloudstorage.DeleteAssetsByTagArgs{
+		CompanyID: company.ID,
+		Config:    s.configureCloudinary(),
+	}); err != nil {
+		return err
+	}
+
+	if err := cloudstorage.DeleteEmptyFolder(&cloudstorage.DeleteEmptyFolderArgs{
+		CompanyID: company.ID,
+		Config:    s.configureCloudinary(),
+	}); err != nil {
+		return err
 	}
 
 	return nil
