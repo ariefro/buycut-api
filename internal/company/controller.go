@@ -40,9 +40,11 @@ type getCompaniesRequest struct {
 	Keyword string `json:"keyword"`
 }
 
-type updateCompaniesRequest struct {
-	CompanyID uint   `json:"company_id" validate:"required~id tidak boleh kosong"`
-	Name      string `json:"name" validate:"required~nama perusahaan tidak boleh kosong"`
+type updateCompanyRequest struct {
+	CompanyID   *uint   `json:"company_id"`
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+	ImageURL    *string `json:"image_url"`
 }
 
 func (ctrl *controller) Create(c *fiber.Ctx) error {
@@ -114,7 +116,7 @@ func (ctrl *controller) FindOneByID(c *fiber.Ctx) error {
 }
 
 func (ctrl *controller) Update(c *fiber.Ctx) error {
-	var request updateCompaniesRequest
+	var request updateCompanyRequest
 	if err := c.BodyParser(&request); err != nil {
 		res := helper.ResponseFailed(err.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(res)

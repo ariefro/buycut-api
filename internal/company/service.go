@@ -18,7 +18,7 @@ type Service interface {
 	Count(ctx context.Context, args *getCompaniesRequest) (int64, error)
 	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
 	FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error)
-	Update(ctx context.Context, args *updateCompaniesRequest) error
+	Update(ctx context.Context, args *updateCompanyRequest) error
 	Delete(ctx context.Context, company *entity.Company) error
 }
 
@@ -83,14 +83,23 @@ func (s *service) FindOneByID(ctx context.Context, companyID uint) (*entity.Comp
 	return s.repo.FindOneByID(ctx, companyID)
 }
 
-func (s *service) Update(ctx context.Context, args *updateCompaniesRequest) error {
-	slug := helper.GenerateSlug(args.Name)
-	dataToUpdate := map[string]interface{}{
-		common.ColumnName: strings.ToLower(args.Name),
-		common.ColumnSlug: slug,
+func (s *service) Update(ctx context.Context, args *updateCompanyRequest) error {
+	dataToUpdate := map[string]interface{}{}
+	if args.Name != nil {
+		slug := helper.GenerateSlug(*args.Name)
+		dataToUpdate[common.ColumnName] = strings.ToLower(*args.Name)
+		dataToUpdate[common.ColumnSlug] = slug
 	}
 
-	return s.repo.Update(ctx, args.CompanyID, dataToUpdate)
+	if args.Description != nil {
+		dataToUpdate[common.ColumnDescription] = *args.Description
+	}
+
+	if args.ImageURL != nil {
+		dataToUpdate[common.ColumnImageURL] = *args.ImageURL
+	}
+
+	return s.repo.Update(ctx, *args.CompanyID, dataToUpdate)
 }
 
 func (s *service) Delete(ctx context.Context, company *entity.Company) error {
@@ -99,9 +108,9 @@ func (s *service) Delete(ctx context.Context, company *entity.Company) error {
 		return err
 	} else {
 		if errDeleteFile := cloudstorage.DeleteFile(&cloudstorage.DeleteArgs{
-			CompanyName: company.Name,
-			Config:      s.configureCloudinary(),
-			Slug:        company.Slug,
+			CompanyID: company.ID,
+			Config:    s.configureCloudinary(),
+			Slug:      company.Slug,
 		}); errDeleteFile != nil {
 			return errDeleteFile
 		}
