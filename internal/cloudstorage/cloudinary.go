@@ -10,6 +10,7 @@ import (
 	"github.com/ariefro/buycut-api/pkg/helper"
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api"
+	"github.com/cloudinary/cloudinary-go/v2/api/admin"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 )
 
@@ -29,6 +30,16 @@ type DeleteArgs struct {
 	CompanyID uint
 	Config    *config.CloudinaryConfig
 	Slug      string
+}
+
+type DeleteAssetsByTagArgs struct {
+	CompanyID uint
+	Config    *config.CloudinaryConfig
+}
+
+type DeleteEmptyFolderArgs struct {
+	CompanyID uint
+	Config    *config.CloudinaryConfig
 }
 
 type UploadImageArgs struct {
@@ -78,6 +89,38 @@ func DeleteFile(args *DeleteArgs) error {
 	publicID := fmt.Sprintf("%s/%s/%s", args.Config.CloudinaryBuycutFolder, companyIDStr, args.Slug)
 	destroyParams := uploader.DestroyParams{PublicID: publicID}
 	_, err = cld.Upload.Destroy(ctx, destroyParams)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteAssetsByTag(args *DeleteAssetsByTagArgs) error {
+	ctx := context.Background()
+	cld, err := SetupCloudinary(args.Config)
+	if err != nil {
+		return err
+	}
+
+	companyIDStr := strconv.FormatUint(uint64(args.CompanyID), 10)
+	_, err = cld.Admin.DeleteAssetsByTag(ctx, admin.DeleteAssetsByTagParams{Tag: companyIDStr})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteEmptyFolder(args *DeleteEmptyFolderArgs) error {
+	ctx := context.Background()
+	cld, err := SetupCloudinary(args.Config)
+	if err != nil {
+		return err
+	}
+
+	companyIDStr := strconv.FormatUint(uint64(args.CompanyID), 10)
+	_, err = cld.Admin.DeleteFolder(ctx, admin.DeleteFolderParams{Folder: companyIDStr})
 	if err != nil {
 		return err
 	}
