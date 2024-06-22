@@ -38,33 +38,31 @@ type uploadImageArgs struct {
 
 func (s *service) Create(ctx context.Context, args *createCompanyArgs) error {
 	slug := helper.GenerateSlug(args.Request.Name)
-	imageURL, err := cloudstorage.UploadImage(ctx, &cloudstorage.UploadImageArgs{
-		Company: args.Request.Name,
-		File:    args.FormHeader,
-		Slug:    slug,
-	}, s.configureCloudinary())
-	if err != nil {
-		return err
-	}
 
 	company := &entity.Company{
 		Name:        strings.ToLower(args.Request.Name),
 		Slug:        slug,
 		Description: args.Request.Description,
-		ImageURL:    imageURL,
 		Proof:       args.Request.Proof,
 	}
 
-	err = s.repo.Create(ctx, company)
-	if err != nil {
-		if errDeleteFile := cloudstorage.DeleteFile(&cloudstorage.DeleteArgs{
-			CompanyName: args.Request.Name,
-			Config:      s.configureCloudinary(),
-			Slug:        slug,
-		}); errDeleteFile != nil {
-			return errDeleteFile
-		}
+	if err := s.repo.Create(ctx, company); err != nil {
+		return err
+	}
 
+	imageURL, err := cloudstorage.UploadImage(ctx, &cloudstorage.UploadImageArgs{
+		CompanyID: company.ID,
+		File:      args.FormHeader,
+		Slug:      slug,
+	}, s.configureCloudinary())
+	if err != nil {
+		return err
+	}
+
+	if err := s.Update(ctx, &updateCompanyRequest{
+		CompanyID: &company.ID,
+		ImageURL:  &imageURL,
+	}); err != nil {
 		return err
 	}
 

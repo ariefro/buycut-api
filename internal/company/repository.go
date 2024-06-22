@@ -29,8 +29,8 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db}
 }
 
-func (r *repository) Create(ctx context.Context, companies *entity.Company) error {
-	if err := r.db.WithContext(ctx).Create(companies).Error; err != nil {
+func (r *repository) Create(ctx context.Context, company *entity.Company) error {
+	if err := r.db.WithContext(ctx).Create(company).Error; err != nil {
 		return err
 	}
 

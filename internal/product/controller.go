@@ -38,9 +38,9 @@ type createProductsRequest struct {
 }
 
 type createProductArgs struct {
-	CompanyName string
-	FormHeader  *multipart.FileHeader
-	Request     *createProductsRequest
+	CompanyID  uint
+	FormHeader *multipart.FileHeader
+	Request    *createProductsRequest
 }
 
 type updateProductsRequest struct {
@@ -94,9 +94,9 @@ func (ctrl *controller) Create(c *fiber.Ctx) error {
 	}
 
 	if err := ctrl.service.Create(c.Context(), &createProductArgs{
-		CompanyName: company.Name,
-		FormHeader:  formHeader,
-		Request:     &request,
+		CompanyID:  company.ID,
+		FormHeader: formHeader,
+		Request:    &request,
 	}); err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
