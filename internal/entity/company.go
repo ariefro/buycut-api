@@ -11,8 +11,8 @@ type Company struct {
 	Name        string         `gorm:"not null;unique" json:"name"`
 	Slug        string         `gorm:"not null;unique" json:"slug"`
 	Description string         `gorm:"not null" json:"description"`
-	ImageURL    string         `gorm:"type:varchar(255)" json:"image_url"`
-	Proof       pq.StringArray `gorm:"type:text[]" json:"proof"`
+	ImageURL    string         `gorm:"not null;type:varchar(255)" json:"image_url"`
+	Proof       pq.StringArray `gorm:"not null;type:text[]" json:"proof"`
 	Products    []Product      `gorm:"foreignKey:CompanyID" json:"products,omitempty"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"-"`

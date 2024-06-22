@@ -120,7 +120,8 @@ func DeleteEmptyFolder(args *DeleteEmptyFolderArgs) error {
 	}
 
 	companyIDStr := strconv.FormatUint(uint64(args.CompanyID), 10)
-	_, err = cld.Admin.DeleteFolder(ctx, admin.DeleteFolderParams{Folder: companyIDStr})
+	pathFolder := fmt.Sprintf("%s/%s", args.Config.CloudinaryBuycutFolder, companyIDStr)
+	_, err = cld.Admin.DeleteFolder(ctx, admin.DeleteFolderParams{Folder: pathFolder})
 	if err != nil {
 		return err
 	}

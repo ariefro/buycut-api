@@ -136,11 +136,11 @@ func (s *service) Update(ctx context.Context, productID uint, args *updateProduc
 	dataToUpdate := map[string]interface{}{}
 
 	slug := helper.GenerateSlug(args.Request.Name)
-	dataToUpdate["name"] = strings.ToLower(args.Request.Name)
-	dataToUpdate["slug"] = slug
+	dataToUpdate[common.ColumnName] = strings.ToLower(args.Request.Name)
+	dataToUpdate[common.ColumnSlug] = slug
 
 	if args.Request.CompanyID != nil {
-		dataToUpdate["company_id"] = args.Request.CompanyID
+		dataToUpdate[common.ColumnCompanyID] = args.Request.CompanyID
 	}
 
 	if args.FormHeader != nil {
@@ -162,7 +162,7 @@ func (s *service) Update(ctx context.Context, productID uint, args *updateProduc
 			return err
 		}
 
-		dataToUpdate["image_url"] = imageURL
+		dataToUpdate[common.ColumnImageURL] = imageURL
 	}
 
 	return s.repo.Update(ctx, productID, dataToUpdate)

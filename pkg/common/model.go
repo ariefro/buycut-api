@@ -5,5 +5,6 @@ const (
 	ColumnDescription = "description"
 	ColumnImageURL    = "image_url"
 	ColumnName        = "name"
+	ColumnProof       = "proof"
 	ColumnSlug        = "slug"
 )

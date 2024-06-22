@@ -11,6 +11,7 @@ import (
 	"github.com/ariefro/buycut-api/pkg/common"
 	"github.com/ariefro/buycut-api/pkg/helper"
 	"github.com/ariefro/buycut-api/pkg/pagination"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -19,7 +20,7 @@ type Service interface {
 	Count(ctx context.Context, args *getCompaniesRequest) (int64, error)
 	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
 	FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error)
-	Update(ctx context.Context, args *updateCompanyRequest) error
+	Update(ctx context.Context, args *updateCompanyArgs) error
 	Delete(ctx context.Context, company *entity.Company) error
 }
 
@@ -40,7 +41,6 @@ type uploadImageArgs struct {
 
 func (s *service) Create(ctx context.Context, args *createCompanyArgs) error {
 	slug := helper.GenerateSlug(args.Request.Name)
-
 	company := &entity.Company{
 		Name:        strings.ToLower(args.Request.Name),
 		Slug:        slug,
@@ -61,9 +61,11 @@ func (s *service) Create(ctx context.Context, args *createCompanyArgs) error {
 		return err
 	}
 
-	if err := s.Update(ctx, &updateCompanyRequest{
-		CompanyID: &company.ID,
-		ImageURL:  &imageURL,
+	if err := s.Update(ctx, &updateCompanyArgs{
+		Request: &updateCompanyRequest{
+			CompanyID: company.ID,
+			ImageURL:  &imageURL,
+		},
 	}); err != nil {
 		return err
 	}
@@ -83,23 +85,57 @@ func (s *service) FindOneByID(ctx context.Context, companyID uint) (*entity.Comp
 	return s.repo.FindOneByID(ctx, companyID)
 }
 
-func (s *service) Update(ctx context.Context, args *updateCompanyRequest) error {
+func (s *service) Update(ctx context.Context, args *updateCompanyArgs) error {
 	dataToUpdate := map[string]interface{}{}
-	if args.Name != nil {
-		slug := helper.GenerateSlug(*args.Name)
-		dataToUpdate[common.ColumnName] = strings.ToLower(*args.Name)
+	var slug string
+	if args.Request.Name != nil {
+		slug = helper.GenerateSlug(*args.Request.Name)
+		dataToUpdate[common.ColumnName] = strings.ToLower(*args.Request.Name)
 		dataToUpdate[common.ColumnSlug] = slug
 	}
 
-	if args.Description != nil {
-		dataToUpdate[common.ColumnDescription] = *args.Description
+	if args.Request.Description != nil {
+		dataToUpdate[common.ColumnDescription] = *args.Request.Description
 	}
 
-	if args.ImageURL != nil {
-		dataToUpdate[common.ColumnImageURL] = *args.ImageURL
+	if args.Request.Proof != nil {
+		dataToUpdate[common.ColumnProof] = pq.StringArray(args.Request.Proof)
 	}
 
-	return s.repo.Update(ctx, *args.CompanyID, dataToUpdate)
+	if args.FormHeader != nil {
+		// jika tidak ada inputan nama, set slug dari current company
+		if args.Request.Name == nil {
+			slug = args.Company.Slug
+		}
+
+		// jika ada inputan nama dan tidak sama dengan nama dari current company, hapus file lama di cloud
+		if args.Request.Name != nil && *args.Request.Name != args.Company.Name {
+			if err := cloudstorage.DeleteFile(&cloudstorage.DeleteArgs{
+				CompanyID: args.Company.ID,
+				Config:    s.configureCloudinary(),
+				Slug:      args.Company.Slug,
+			}); err != nil {
+				return err
+			}
+		}
+
+		imageURL, err := cloudstorage.UploadImage(ctx, &cloudstorage.UploadImageArgs{
+			CompanyID: args.Request.CompanyID,
+			File:      args.FormHeader,
+			Slug:      slug,
+		}, s.configureCloudinary())
+		if err != nil {
+			return err
+		}
+
+		dataToUpdate[common.ColumnImageURL] = imageURL
+	}
+
+	if args.Request.ImageURL != nil {
+		dataToUpdate[common.ColumnImageURL] = *args.Request.ImageURL
+	}
+
+	return s.repo.Update(ctx, args.Request.CompanyID, dataToUpdate)
 }
 
 func (s *service) Delete(ctx context.Context, company *entity.Company) error {

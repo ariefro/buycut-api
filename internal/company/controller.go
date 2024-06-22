@@ -3,6 +3,7 @@ package company
 import (
 	"mime/multipart"
 
+	"github.com/ariefro/buycut-api/internal/entity"
 	"github.com/ariefro/buycut-api/pkg/helper"
 	"github.com/ariefro/buycut-api/pkg/pagination"
 	"github.com/gofiber/fiber/v2"
@@ -41,10 +42,17 @@ type getCompaniesRequest struct {
 }
 
 type updateCompanyRequest struct {
-	CompanyID   *uint   `json:"company_id"`
-	Name        *string `json:"name"`
-	Description *string `json:"description"`
-	ImageURL    *string `json:"image_url"`
+	CompanyID   uint     `form:"company_id" validate:"required~company id tidak boleh kosong"`
+	Name        *string  `form:"name"`
+	Description *string  `form:"description"`
+	ImageURL    *string  `form:"image_url"`
+	Proof       []string `form:"proof"`
+}
+
+type updateCompanyArgs struct {
+	Company    *entity.Company
+	FormHeader *multipart.FileHeader
+	Request    *updateCompanyRequest
 }
 
 func (ctrl *controller) Create(c *fiber.Ctx) error {
@@ -127,7 +135,17 @@ func (ctrl *controller) Update(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(response)
 	}
 
-	if err := ctrl.service.Update(c.Context(), &request); err != nil {
+	company, err := ctrl.service.FindOneByID(c.Context(), request.CompanyID)
+	if err != nil {
+		return helper.GenerateErrorResponse(c, err.Error())
+	}
+
+	formHeader, _ := c.FormFile("image")
+	if err := ctrl.service.Update(c.Context(), &updateCompanyArgs{
+		Company:    company,
+		FormHeader: formHeader,
+		Request:    &request,
+	}); err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
