@@ -2,6 +2,7 @@ package company
 
 import (
 	"context"
+	"fmt"
 	"mime/multipart"
 	"strings"
 
@@ -58,6 +59,7 @@ func (s *service) Create(ctx context.Context, args *createCompanyArgs) error {
 		Slug:      slug,
 	}, s.configureCloudinary())
 	if err != nil {
+		fmt.Println("=========", err)
 		return err
 	}
 
@@ -177,6 +179,8 @@ func (s *service) configureCloudinary() *config.CloudinaryConfig {
 		CloudinarySecretKey:    s.config.CloudinarySecretKey,
 		CloudinaryBuycutFolder: s.config.CloudinaryBuycutFolder,
 	}
+
+	fmt.Println("qqqqqq", config)
 
 	return config
 }

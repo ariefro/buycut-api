@@ -70,10 +70,14 @@ func UploadFile(args *UploadArgs) (string, error) {
 		Folder:   args.Config.CloudinaryBuycutFolder + "/" + companyIDStr,
 	}
 
+	fmt.Println("p1111111", companyIDStr, uploadParams)
 	result, err := cld.Upload.Upload(ctx, args.File, uploadParams)
 	if err != nil {
+		fmt.Println("2222222", err)
 		return "", err
 	}
+
+	fmt.Println("33333333", result)
 
 	return result.SecureURL, nil
 }
