@@ -117,7 +117,7 @@ func (ctrl *controller) FindByKeyword(c *fiber.Ctx) error {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	res := helper.ResponseSuccess("Merek ini masuk dalam daftar boikot!", result)
+	res := helper.ResponseSuccess("Berhasil memuat daftar merek yang diboikot", result)
 	return c.Status(fiber.StatusOK).JSON(res)
 }
 
@@ -144,7 +144,7 @@ func (ctrl *controller) FindAll(c *fiber.Ctx) error {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	res := helper.ResponseSuccess("Berhasil memuat daftar merek yang diboikot", results)
+	res := helper.ResponseSuccessWithPagination("Berhasil memuat daftar merek yang diboikot", results, pages)
 	return c.Status(fiber.StatusOK).JSON(res)
 }
 

@@ -71,7 +71,7 @@ func parseInt(value string, defaultValue int) int {
 		return defaultValue
 	}
 
-	if result, err := strconv.Atoi(value); err != nil {
+	if result, err := strconv.Atoi(value); err == nil {
 		return result
 	}
 
