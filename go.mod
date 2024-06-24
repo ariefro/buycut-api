@@ -4,6 +4,7 @@ go 1.22.4
 
 require (
 	github.com/cloudinary/cloudinary-go/v2 v2.7.0
+	github.com/go-co-op/gocron v1.37.0
 	github.com/gofiber/fiber/v2 v2.52.4
 	github.com/gofiber/jwt/v3 v3.3.10
 	github.com/golang-jwt/jwt/v5 v5.2.1
@@ -41,6 +42,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
+	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect

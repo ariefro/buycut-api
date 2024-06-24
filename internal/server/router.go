@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/ariefro/buycut-api/internal/company"
+	"github.com/ariefro/buycut-api/internal/cronjobs"
 	"github.com/ariefro/buycut-api/internal/middleware"
 	"github.com/ariefro/buycut-api/internal/product"
 	"github.com/ariefro/buycut-api/internal/user"
@@ -37,4 +38,7 @@ func setupRouter(
 	brandsApi := api.Group("/brands")
 	brandsApi.Post("/boycotted", productController.FindAll)
 	brandsApi.Post("/search", productController.FindByKeyword)
+
+	// Cron Trigger
+	cronjobs.Trigger()
 }
