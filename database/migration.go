@@ -10,7 +10,7 @@ func Migration(db *gorm.DB) {
 	log.Info("running migrations...")
 	db.AutoMigrate(
 		&entity.Company{},
-		&entity.Product{},
+		&entity.Brand{},
 		&entity.User{},
 	)
 

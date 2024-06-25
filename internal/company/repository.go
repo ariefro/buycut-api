@@ -18,7 +18,7 @@ type Repository interface {
 	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
 	FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error)
 	Update(ctx context.Context, companyID uint, data map[string]interface{}) error
-	DeleteAssociateCompanyProductsInTx(ctx context.Context, tx *gorm.DB, companyID uint) error
+	DeleteAssociateCompanyBrandsInTx(ctx context.Context, tx *gorm.DB, companyID uint) error
 	DeleteInTx(ctx context.Context, tx *gorm.DB, companyID uint) error
 }
 
@@ -53,8 +53,8 @@ func (r *repository) Count(ctx context.Context, args *getCompaniesRequest) (int6
 
 	keyword := "%" + args.Keyword + "%"
 	if args.Keyword != "" {
-		query = query.Joins("LEFT JOIN products ON products.company_id = companies.id").
-			Where("LOWER(companies.name) LIKE LOWER(?) OR LOWER(products.name) LIKE LOWER(?)", keyword, keyword)
+		query = query.Joins("LEFT JOIN brands ON brands.company_id = companies.id").
+			Where("LOWER(companies.name) LIKE LOWER(?) OR LOWER(brands.name) LIKE LOWER(?)", keyword, keyword)
 	}
 
 	if err := query.Count(&count).Error; err != nil {
@@ -66,12 +66,12 @@ func (r *repository) Count(ctx context.Context, args *getCompaniesRequest) (int6
 
 func (r *repository) Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error) {
 	var companies []*entity.Company
-	query := r.db.WithContext(ctx).Model(&entity.Company{}).Preload("Products")
+	query := r.db.WithContext(ctx).Model(&entity.Company{}).Preload("Brands")
 
 	keyword := "%" + args.Keyword + "%"
 	if args.Keyword != "" {
-		query = query.Joins("LEFT JOIN products ON products.company_id = companies.id").
-			Where("LOWER(companies.name) LIKE LOWER(?) OR LOWER(products.name) LIKE LOWER(?)", keyword, keyword)
+		query = query.Joins("LEFT JOIN brands ON brands.company_id = companies.id").
+			Where("LOWER(companies.name) LIKE LOWER(?) OR LOWER(brands.name) LIKE LOWER(?)", keyword, keyword)
 	}
 
 	if err := query.Limit(paginationParams.Limit).Offset(paginationParams.Offset).Find(&companies).Error; err != nil {
@@ -83,7 +83,7 @@ func (r *repository) Find(ctx context.Context, args *getCompaniesRequest, pagina
 
 func (r *repository) FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error) {
 	var company *entity.Company
-	if err := r.db.WithContext(ctx).Preload("Products").First(&company, "id = ?", companyID).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("Brands").First(&company, "id = ?", companyID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New(common.CompanyNotFound)
 		}
@@ -107,8 +107,8 @@ func (r *repository) Update(ctx context.Context, companyID uint, data map[string
 	return nil
 }
 
-func (r *repository) DeleteAssociateCompanyProductsInTx(ctx context.Context, tx *gorm.DB, companyID uint) error {
-	if err := tx.WithContext(ctx).Delete(&entity.Product{}, "company_id = ?", companyID).Error; err != nil {
+func (r *repository) DeleteAssociateCompanyBrandsInTx(ctx context.Context, tx *gorm.DB, companyID uint) error {
+	if err := tx.WithContext(ctx).Delete(&entity.Brand{}, "company_id = ?", companyID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.New(common.CompanyNotFound)
 		}

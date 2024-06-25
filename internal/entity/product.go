@@ -2,7 +2,7 @@ package entity
 
 import "time"
 
-type Product struct {
+type Brand struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	Name      string    `gorm:"not null;unique" json:"name"`
 	Slug      string    `gorm:"not null;unique" json:"slug"`

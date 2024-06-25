@@ -13,7 +13,7 @@ type Company struct {
 	Description string         `gorm:"not null" json:"description"`
 	ImageURL    string         `gorm:"not null;type:varchar(255)" json:"image_url"`
 	Proof       pq.StringArray `gorm:"not null;type:text[]" json:"proof"`
-	Products    []Product      `gorm:"foreignKey:CompanyID" json:"products,omitempty"`
+	Brands      []Brand        `gorm:"foreignKey:CompanyID" json:"brands,omitempty"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"-"`
 }

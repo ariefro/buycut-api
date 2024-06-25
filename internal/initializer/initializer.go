@@ -6,8 +6,8 @@ package initializer
 import (
 	"github.com/ariefro/buycut-api/config"
 	"github.com/ariefro/buycut-api/database"
+	"github.com/ariefro/buycut-api/internal/brand"
 	"github.com/ariefro/buycut-api/internal/company"
-	"github.com/ariefro/buycut-api/internal/product"
 	"github.com/ariefro/buycut-api/internal/server"
 	"github.com/ariefro/buycut-api/internal/user"
 	"github.com/google/wire"
@@ -25,10 +25,10 @@ var companySet = wire.NewSet(
 	company.NewController,
 )
 
-var productSet = wire.NewSet(
-	product.NewRepository,
-	product.NewService,
-	product.NewController,
+var brandSet = wire.NewSet(
+	brand.NewRepository,
+	brand.NewService,
+	brand.NewController,
 )
 
 func InitializedServer() error {
@@ -37,7 +37,7 @@ func InitializedServer() error {
 		database.NewConnectPostgres,
 		userSet,
 		companySet,
-		productSet,
+		brandSet,
 		server.NewFiberServer,
 	)
 

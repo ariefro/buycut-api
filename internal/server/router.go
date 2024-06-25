@@ -1,10 +1,10 @@
 package server
 
 import (
+	"github.com/ariefro/buycut-api/internal/brand"
 	"github.com/ariefro/buycut-api/internal/company"
 	"github.com/ariefro/buycut-api/internal/cronjobs"
 	"github.com/ariefro/buycut-api/internal/middleware"
-	"github.com/ariefro/buycut-api/internal/product"
 	"github.com/ariefro/buycut-api/internal/user"
 	"github.com/gofiber/fiber/v2"
 )
@@ -13,7 +13,7 @@ func setupRouter(
 	app *fiber.App,
 	userController user.Controller,
 	companyController company.Controller,
-	productController product.Controller,
+	brandController brand.Controller,
 ) {
 	api := app.Group("/api/v1")
 
@@ -29,15 +29,14 @@ func setupRouter(
 	companiesApi.Put("/", middleware.Auth(), companyController.Update)
 	companiesApi.Delete("/:id", middleware.Auth(), companyController.Delete)
 
-	// products
-	productsApi := api.Group("/products")
-	productsApi.Post("/", middleware.Auth(), productController.Create)
-	productsApi.Put("/:id", middleware.Auth(), productController.Update)
-	productsApi.Delete("/:id", middleware.Auth(), productController.Delete)
-
+	// brands
 	brandsApi := api.Group("/brands")
-	brandsApi.Post("/boycotted", productController.FindAll)
-	brandsApi.Post("/search", productController.FindByKeyword)
+	brandsApi.Post("/", middleware.Auth(), brandController.Create)
+	brandsApi.Put("/:id", middleware.Auth(), brandController.Update)
+	brandsApi.Delete("/:id", middleware.Auth(), brandController.Delete)
+
+	brandsApi.Post("/boycotted", brandController.FindAll)
+	brandsApi.Post("/search", brandController.FindByKeyword)
 
 	// Cron Trigger
 	cronjobs.Trigger()

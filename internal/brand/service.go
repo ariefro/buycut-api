@@ -1,10 +1,9 @@
-package product
+package brand
 
 import (
 	"context"
 	"errors"
 	"sort"
-	"strings"
 
 	"github.com/ariefro/buycut-api/config"
 	"github.com/ariefro/buycut-api/internal/cloudstorage"
@@ -16,13 +15,13 @@ import (
 )
 
 type Service interface {
-	Create(ctx context.Context, args *createProductArgs) error
-	FindByKeyword(ctx context.Context, args *getProductByKeywordRequest) (interface{}, error)
-	FindOneByID(ctx context.Context, productID uint) (*entity.Product, error)
-	FindAll(ctx context.Context, args *getProductByKeywordRequest, paginationParams *pagination.PaginationParams) ([]*boycottedResult, error)
-	CountAll(ctx context.Context, args *getProductByKeywordRequest) (int64, error)
-	Update(ctx context.Context, productID uint, args *updateProductArgs) error
-	Delete(ctx context.Context, product *entity.Product) error
+	Create(ctx context.Context, args *createBrandArgs) error
+	FindByKeyword(ctx context.Context, args *getBrandByKeywordRequest) (interface{}, error)
+	FindOneByID(ctx context.Context, brandID uint) (*entity.Brand, error)
+	FindAll(ctx context.Context, args *getBrandByKeywordRequest, paginationParams *pagination.PaginationParams) ([]*boycottedResult, error)
+	CountAll(ctx context.Context, args *getBrandByKeywordRequest) (int64, error)
+	Update(ctx context.Context, brandID uint, args *updateBrandArgs) error
+	Delete(ctx context.Context, brand *entity.Brand) error
 }
 
 type service struct {
@@ -35,7 +34,7 @@ func NewService(config *config.Config, repo Repository, companyRepo company.Repo
 	return &service{config, repo, companyRepo}
 }
 
-func (s *service) Create(ctx context.Context, args *createProductArgs) error {
+func (s *service) Create(ctx context.Context, args *createBrandArgs) error {
 	slug := helper.GenerateSlug(args.Request.Name)
 	imageURL, err := cloudstorage.UploadImage(ctx, &cloudstorage.UploadImageArgs{
 		CompanyID: args.CompanyID,
@@ -46,37 +45,37 @@ func (s *service) Create(ctx context.Context, args *createProductArgs) error {
 		return err
 	}
 
-	product := &entity.Product{
-		Name:      strings.ToLower(args.Request.Name),
+	brand := &entity.Brand{
+		Name:      args.Request.Name,
 		Slug:      slug,
 		CompanyID: args.Request.CompanyID,
 		ImageURL:  imageURL,
 	}
 
-	return s.repo.Create(ctx, product)
+	return s.repo.Create(ctx, brand)
 }
 
-func (s *service) FindOneByID(ctx context.Context, productID uint) (*entity.Product, error) {
-	return s.repo.FindOneByID(ctx, productID)
+func (s *service) FindOneByID(ctx context.Context, brandID uint) (*entity.Brand, error) {
+	return s.repo.FindOneByID(ctx, brandID)
 }
 
-func (s *service) FindByKeyword(ctx context.Context, args *getProductByKeywordRequest) (interface{}, error) {
-	companies, products, err := s.repo.FindByKeyword(ctx, args.Keyword)
+func (s *service) FindByKeyword(ctx context.Context, args *getBrandByKeywordRequest) (interface{}, error) {
+	companies, brands, err := s.repo.FindByKeyword(ctx, args.Keyword)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(companies) > 0 {
 		return companies, nil
-	} else if len(products) > 0 {
-		return products, nil
+	} else if len(brands) > 0 {
+		return brands, nil
 	} else {
-		return nil, errors.New(common.ProductNotFound)
+		return nil, errors.New(common.BrandNotFound)
 	}
 }
 
-func (s *service) FindAll(ctx context.Context, args *getProductByKeywordRequest, paginationParams *pagination.PaginationParams) ([]*boycottedResult, error) {
-	companies, products, err := s.repo.FindAll(ctx, args, paginationParams)
+func (s *service) FindAll(ctx context.Context, args *getBrandByKeywordRequest, paginationParams *pagination.PaginationParams) ([]*boycottedResult, error) {
+	companies, brands, err := s.repo.FindAll(ctx, args, paginationParams)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +84,7 @@ func (s *service) FindAll(ctx context.Context, args *getProductByKeywordRequest,
 	for _, company := range companies {
 		results = append(results, &boycottedResult{
 			ID:          company.ID,
-			Name:        helper.MakeTitle(company.Name),
+			Name:        company.Name,
 			Slug:        company.Slug,
 			Description: company.Description,
 			ImageURL:    company.ImageURL,
@@ -95,16 +94,16 @@ func (s *service) FindAll(ctx context.Context, args *getProductByKeywordRequest,
 		})
 	}
 
-	for _, product := range products {
+	for _, brand := range brands {
 		results = append(results, &boycottedResult{
-			ID:          product.ID,
-			Name:        helper.MakeTitle(product.Name),
-			Slug:        product.Slug,
-			Description: product.Company.Description,
-			ImageURL:    product.ImageURL,
-			Proof:       product.Company.Proof,
-			Company:     product.Company,
-			Type:        "product",
+			ID:          brand.ID,
+			Name:        brand.Name,
+			Slug:        brand.Slug,
+			Description: brand.Company.Description,
+			ImageURL:    brand.ImageURL,
+			Proof:       brand.Company.Proof,
+			Company:     brand.Company,
+			Type:        "brand",
 		})
 	}
 
@@ -116,27 +115,27 @@ func (s *service) FindAll(ctx context.Context, args *getProductByKeywordRequest,
 	return results, nil
 }
 
-func (s *service) CountAll(ctx context.Context, args *getProductByKeywordRequest) (int64, error) {
+func (s *service) CountAll(ctx context.Context, args *getBrandByKeywordRequest) (int64, error) {
 	companyCount, err := s.companyRepo.CountCompanies(ctx, args.Keyword)
 	if err != nil {
 		return 0, err
 	}
 
-	productCount, err := s.repo.CountProducts(ctx, args.Keyword)
+	brandCount, err := s.repo.CountBrands(ctx, args.Keyword)
 	if err != nil {
 		return 0, err
 	}
 
-	results := companyCount + productCount
+	results := companyCount + brandCount
 
 	return results, nil
 }
 
-func (s *service) Update(ctx context.Context, productID uint, args *updateProductArgs) error {
+func (s *service) Update(ctx context.Context, brandID uint, args *updateBrandArgs) error {
 	dataToUpdate := map[string]interface{}{}
 
 	slug := helper.GenerateSlug(args.Request.Name)
-	dataToUpdate[common.ColumnName] = strings.ToLower(args.Request.Name)
+	dataToUpdate[common.ColumnName] = args.Request.Name
 	dataToUpdate[common.ColumnSlug] = slug
 
 	if args.Request.CompanyID != nil {
@@ -145,16 +144,16 @@ func (s *service) Update(ctx context.Context, productID uint, args *updateProduc
 
 	if args.FormHeader != nil {
 		// jika nama dari produk tidak sama dengan nama dari request, maka hapus file yang lama
-		if args.Product.Name != args.Request.Name {
+		if args.Brand.Name != args.Request.Name {
 			cloudstorage.DeleteFile(&cloudstorage.DeleteArgs{
-				CompanyID: args.Product.Company.ID,
+				CompanyID: args.Brand.Company.ID,
 				Config:    s.configureCloudinary(),
-				Slug:      args.Product.Slug,
+				Slug:      args.Brand.Slug,
 			})
 		}
 
 		imageURL, err := cloudstorage.UploadImage(ctx, &cloudstorage.UploadImageArgs{
-			CompanyID: args.Product.Company.ID,
+			CompanyID: args.Brand.Company.ID,
 			File:      args.FormHeader,
 			Slug:      slug,
 		}, s.configureCloudinary())
@@ -165,18 +164,18 @@ func (s *service) Update(ctx context.Context, productID uint, args *updateProduc
 		dataToUpdate[common.ColumnImageURL] = imageURL
 	}
 
-	return s.repo.Update(ctx, productID, dataToUpdate)
+	return s.repo.Update(ctx, brandID, dataToUpdate)
 }
 
-func (s *service) Delete(ctx context.Context, product *entity.Product) error {
-	err := s.repo.Delete(ctx, product.ID)
+func (s *service) Delete(ctx context.Context, brand *entity.Brand) error {
+	err := s.repo.Delete(ctx, brand.ID)
 	if err != nil {
 		return err
 	} else {
 		if errDeleteFile := cloudstorage.DeleteFile(&cloudstorage.DeleteArgs{
-			CompanyID: product.Company.ID,
+			CompanyID: brand.Company.ID,
 			Config:    s.configureCloudinary(),
-			Slug:      product.Slug,
+			Slug:      brand.Slug,
 		}); errDeleteFile != nil {
 			return errDeleteFile
 		}

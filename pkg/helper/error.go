@@ -17,7 +17,7 @@ func GenerateErrorResponse(c *fiber.Ctx, errorMessage string) error {
 		statusCode = fiber.StatusUnauthorized
 	case common.EmailNotRegistered,
 		common.CompanyNotFound,
-		common.ProductNotFound:
+		common.BrandNotFound:
 		statusCode = fiber.StatusNotFound
 	case common.ErrDuplicateEntry,
 		gorm.ErrDuplicatedKey.Error():

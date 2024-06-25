@@ -9,8 +9,8 @@ package initializer
 import (
 	"github.com/ariefro/buycut-api/config"
 	"github.com/ariefro/buycut-api/database"
+	"github.com/ariefro/buycut-api/internal/brand"
 	"github.com/ariefro/buycut-api/internal/company"
-	"github.com/ariefro/buycut-api/internal/product"
 	"github.com/ariefro/buycut-api/internal/server"
 	"github.com/ariefro/buycut-api/internal/user"
 	"github.com/google/wire"
@@ -27,10 +27,10 @@ func InitializedServer() error {
 	companyRepository := company.NewRepository(db)
 	companyService := company.NewService(db, configConfig, companyRepository)
 	companyController := company.NewController(companyService)
-	productRepository := product.NewRepository(db)
-	productService := product.NewService(configConfig, productRepository, companyRepository)
-	productController := product.NewController(productService, companyService)
-	error2 := server.NewFiberServer(configConfig, controller, companyController, productController)
+	brandRepository := brand.NewRepository(db)
+	brandService := brand.NewService(configConfig, brandRepository, companyRepository)
+	brandController := brand.NewController(brandService, companyService)
+	error2 := server.NewFiberServer(configConfig, controller, companyController, brandController)
 	return error2
 }
 
@@ -40,4 +40,4 @@ var userSet = wire.NewSet(user.NewRepository, user.NewService, user.NewControlle
 
 var companySet = wire.NewSet(company.NewRepository, company.NewService, company.NewController)
 
-var productSet = wire.NewSet(product.NewRepository, product.NewService, product.NewController)
+var brandSet = wire.NewSet(brand.NewRepository, brand.NewService, brand.NewController)

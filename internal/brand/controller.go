@@ -1,4 +1,4 @@
-package product
+package brand
 
 import (
 	"mime/multipart"
@@ -28,29 +28,29 @@ func NewController(service Service, companyService company.Service) Controller {
 	return &controller{service, companyService}
 }
 
-type getProductByKeywordRequest struct {
+type getBrandByKeywordRequest struct {
 	Keyword string `json:"keyword"`
 }
 
-type createProductsRequest struct {
+type createBrandsRequest struct {
 	CompanyID uint   `form:"company_id" validate:"required~company id tidak boleh kosong"`
 	Name      string `form:"name" validate:"required~nama merek tidak boleh kosong"`
 }
 
-type createProductArgs struct {
+type createBrandArgs struct {
 	CompanyID  uint
 	FormHeader *multipart.FileHeader
-	Request    *createProductsRequest
+	Request    *createBrandsRequest
 }
 
-type updateProductsRequest struct {
+type updateBrandsRequest struct {
 	Name      string `form:"name" validate:"required~nama merek tidak boleh kosong"`
 	CompanyID *uint  `form:"company_id"`
 }
 
-type updateProductArgs struct {
-	Product    *entity.Product
-	Request    *updateProductsRequest
+type updateBrandArgs struct {
+	Brand      *entity.Brand
+	Request    *updateBrandsRequest
 	FormHeader *multipart.FileHeader
 }
 
@@ -62,16 +62,16 @@ type boycottedResult struct {
 	ImageURL    string          `json:"image_url"`
 	Proof       []string        `json:"proof"`
 	Company     *entity.Company `json:"company"`
-	Type        string          `json:"type"` // Either "company" or "product"
+	Type        string          `json:"type"` // Either "company" or "brand"
 }
 
 type boycottedCountResult struct {
 	CompanyCount int64 `json:"company_count"`
-	ProductCount int64 `json:"product_count"`
+	BrandCount   int64 `json:"brand_count"`
 }
 
 func (ctrl *controller) Create(c *fiber.Ctx) error {
-	var request createProductsRequest
+	var request createBrandsRequest
 	if err := c.BodyParser(&request); err != nil {
 		response := helper.ResponseFailed(err.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(response)
@@ -93,7 +93,7 @@ func (ctrl *controller) Create(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(response)
 	}
 
-	if err := ctrl.service.Create(c.Context(), &createProductArgs{
+	if err := ctrl.service.Create(c.Context(), &createBrandArgs{
 		CompanyID:  company.ID,
 		FormHeader: formHeader,
 		Request:    &request,
@@ -106,7 +106,7 @@ func (ctrl *controller) Create(c *fiber.Ctx) error {
 }
 
 func (ctrl *controller) FindByKeyword(c *fiber.Ctx) error {
-	var request getProductByKeywordRequest
+	var request getBrandByKeywordRequest
 	if err := c.BodyParser(&request); err != nil {
 		response := helper.ResponseFailed(err.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(response)
@@ -122,7 +122,7 @@ func (ctrl *controller) FindByKeyword(c *fiber.Ctx) error {
 }
 
 func (ctrl *controller) FindAll(c *fiber.Ctx) error {
-	var request getProductByKeywordRequest
+	var request getBrandByKeywordRequest
 	if err := c.BodyParser(&request); err != nil {
 		res := helper.ResponseFailed(err.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(res)
@@ -144,12 +144,14 @@ func (ctrl *controller) FindAll(c *fiber.Ctx) error {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
+	// pages limit for query companies and brands
+	pages.Limit = pages.Limit * 2
 	res := helper.ResponseSuccessWithPagination("Berhasil memuat daftar merek yang diboikot", results, pages)
 	return c.Status(fiber.StatusOK).JSON(res)
 }
 
 func (ctrl *controller) Update(c *fiber.Ctx) error {
-	var request updateProductsRequest
+	var request updateBrandsRequest
 	if err := c.BodyParser(&request); err != nil {
 		response := helper.ResponseFailed(err.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(response)
@@ -160,33 +162,33 @@ func (ctrl *controller) Update(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(response)
 	}
 
-	productID := helper.ParseStringToUint(c.Params("id"))
-	product, err := ctrl.service.FindOneByID(c.Context(), productID)
+	brandID := helper.ParseStringToUint(c.Params("id"))
+	brand, err := ctrl.service.FindOneByID(c.Context(), brandID)
 	if err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
 	formHeader, _ := c.FormFile("image")
-	if err := ctrl.service.Update(c.Context(), productID, &updateProductArgs{
-		Product:    product,
+	if err := ctrl.service.Update(c.Context(), brandID, &updateBrandArgs{
+		Brand:      brand,
 		Request:    &request,
 		FormHeader: formHeader,
 	}); err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	res := helper.ResponseSuccess("Data product berhasil diperbarui", nil)
+	res := helper.ResponseSuccess("Data brand berhasil diperbarui", nil)
 	return c.Status(fiber.StatusOK).JSON(res)
 }
 
 func (ctrl *controller) Delete(c *fiber.Ctx) error {
-	productID := helper.ParseStringToUint(c.Params("id"))
-	product, err := ctrl.service.FindOneByID(c.Context(), productID)
+	brandID := helper.ParseStringToUint(c.Params("id"))
+	brand, err := ctrl.service.FindOneByID(c.Context(), brandID)
 	if err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	if err := ctrl.service.Delete(c.Context(), product); err != nil {
+	if err := ctrl.service.Delete(c.Context(), brand); err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 

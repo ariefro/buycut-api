@@ -3,7 +3,6 @@ package company
 import (
 	"context"
 	"mime/multipart"
-	"strings"
 
 	"github.com/ariefro/buycut-api/config"
 	cloudstorage "github.com/ariefro/buycut-api/internal/cloudstorage"
@@ -42,7 +41,7 @@ type uploadImageArgs struct {
 func (s *service) Create(ctx context.Context, args *createCompanyArgs) error {
 	slug := helper.GenerateSlug(args.Request.Name)
 	company := &entity.Company{
-		Name:        strings.ToLower(args.Request.Name),
+		Name:        args.Request.Name,
 		Slug:        slug,
 		Description: args.Request.Description,
 		Proof:       args.Request.Proof,
@@ -90,7 +89,7 @@ func (s *service) Update(ctx context.Context, args *updateCompanyArgs) error {
 	var slug string
 	if args.Request.Name != nil {
 		slug = helper.GenerateSlug(*args.Request.Name)
-		dataToUpdate[common.ColumnName] = strings.ToLower(*args.Request.Name)
+		dataToUpdate[common.ColumnName] = *args.Request.Name
 		dataToUpdate[common.ColumnSlug] = slug
 	}
 
@@ -140,7 +139,7 @@ func (s *service) Update(ctx context.Context, args *updateCompanyArgs) error {
 
 func (s *service) Delete(ctx context.Context, company *entity.Company) error {
 	if errTx := s.db.Transaction(func(tx *gorm.DB) error {
-		if err := s.repo.DeleteAssociateCompanyProductsInTx(ctx, tx, company.ID); err != nil {
+		if err := s.repo.DeleteAssociateCompanyBrandsInTx(ctx, tx, company.ID); err != nil {
 			return err
 		}
 
