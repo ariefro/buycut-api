@@ -72,7 +72,7 @@ func (r *repository) FindAll(ctx context.Context, args *getBrandByKeywordRequest
 	keyword := "%" + args.Keyword + "%"
 
 	// Search in companies
-	resultCompanies := r.db.WithContext(ctx).Model(&entity.Company{}).Limit(paginationParams.Limit).Offset(paginationParams.Offset).Where("LOWER(name) LIKE LOWER(?)", keyword).Find(&companies)
+	resultCompanies := r.db.WithContext(ctx).Model(&entity.Company{}).Limit(paginationParams.Limit).Offset(paginationParams.Offset).Where("LOWER(name) LIKE LOWER(?)", keyword).Order("name asc").Find(&companies)
 	if resultCompanies.Error != nil {
 		return nil, nil, resultCompanies.Error
 	}
@@ -81,7 +81,7 @@ func (r *repository) FindAll(ctx context.Context, args *getBrandByKeywordRequest
 	queryLimitBrand := calculateQueryLimitBrand(resultCompanies.RowsAffected, paginationParams.Limit)
 
 	// Search in brands
-	resultBrands := r.db.WithContext(ctx).Model(&entity.Brand{}).Preload("Company").Limit(int(queryLimitBrand)).Offset(paginationParams.Offset).Where("LOWER(name) LIKE LOWER(?)", keyword).Find(&brands)
+	resultBrands := r.db.WithContext(ctx).Model(&entity.Brand{}).Preload("Company").Limit(int(queryLimitBrand)).Offset(paginationParams.Offset).Where("LOWER(name) LIKE LOWER(?)", keyword).Order("name asc").Find(&brands)
 	if resultBrands.Error != nil {
 		return nil, nil, resultBrands.Error
 	}
