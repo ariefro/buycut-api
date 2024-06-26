@@ -85,13 +85,7 @@ func (ctrl *controller) Create(c *fiber.Ctx) error {
 }
 
 func (ctrl *controller) Find(c *fiber.Ctx) error {
-	var request getCompaniesRequest
-	if err := c.BodyParser(&request); err != nil {
-		response := helper.ResponseFailed(err.Error())
-		return c.Status(fiber.StatusBadRequest).JSON(response)
-	}
-
-	count, err := ctrl.service.Count(c.Context(), &request)
+	count, err := ctrl.service.Count(c.Context())
 	if err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
@@ -102,7 +96,7 @@ func (ctrl *controller) Find(c *fiber.Ctx) error {
 		Limit:  pages.Size(),
 	}
 
-	result, err := ctrl.service.Find(c.Context(), &request, &paginationParams)
+	result, err := ctrl.service.Find(c.Context(), &paginationParams)
 	if err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}

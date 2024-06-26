@@ -16,8 +16,8 @@ import (
 
 type Service interface {
 	Create(ctx context.Context, args *createCompanyArgs) error
-	Count(ctx context.Context, args *getCompaniesRequest) (int64, error)
-	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
+	Count(ctx context.Context) (int64, error)
+	Find(ctx context.Context, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
 	FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error)
 	Update(ctx context.Context, args *updateCompanyArgs) error
 	Delete(ctx context.Context, company *entity.Company) error
@@ -72,12 +72,12 @@ func (s *service) Create(ctx context.Context, args *createCompanyArgs) error {
 	return nil
 }
 
-func (s *service) Count(ctx context.Context, args *getCompaniesRequest) (int64, error) {
-	return s.repo.Count(ctx, args)
+func (s *service) Count(ctx context.Context) (int64, error) {
+	return s.repo.Count(ctx)
 }
 
-func (s *service) Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error) {
-	return s.repo.Find(ctx, args, paginationParams)
+func (s *service) Find(ctx context.Context, paginationParams *pagination.PaginationParams) ([]*entity.Company, error) {
+	return s.repo.Find(ctx, paginationParams)
 }
 
 func (s *service) FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error) {

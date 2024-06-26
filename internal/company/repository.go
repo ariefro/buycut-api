@@ -14,8 +14,8 @@ import (
 type Repository interface {
 	Create(ctx context.Context, companies *entity.Company) error
 	CountCompanies(ctx context.Context, keyword string) (int64, error)
-	Count(ctx context.Context, args *getCompaniesRequest) (int64, error)
-	Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
+	Count(ctx context.Context) (int64, error)
+	Find(ctx context.Context, paginationParams *pagination.PaginationParams) ([]*entity.Company, error)
 	FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error)
 	Update(ctx context.Context, companyID uint, data map[string]interface{}) error
 	DeleteAssociateCompanyBrandsInTx(ctx context.Context, tx *gorm.DB, companyID uint) error
@@ -47,15 +47,9 @@ func (r *repository) CountCompanies(ctx context.Context, keyword string) (int64,
 	return count, nil
 }
 
-func (r *repository) Count(ctx context.Context, args *getCompaniesRequest) (int64, error) {
+func (r *repository) Count(ctx context.Context) (int64, error) {
 	var count int64
 	query := r.db.WithContext(ctx).Model(&entity.Company{})
-
-	keyword := "%" + args.Keyword + "%"
-	if args.Keyword != "" {
-		query = query.Joins("LEFT JOIN brands ON brands.company_id = companies.id").
-			Where("LOWER(companies.name) LIKE LOWER(?) OR LOWER(brands.name) LIKE LOWER(?)", keyword, keyword)
-	}
 
 	if err := query.Count(&count).Error; err != nil {
 		return 0, fmt.Errorf("failed to count companies: %w", err)
@@ -64,17 +58,11 @@ func (r *repository) Count(ctx context.Context, args *getCompaniesRequest) (int6
 	return count, nil
 }
 
-func (r *repository) Find(ctx context.Context, args *getCompaniesRequest, paginationParams *pagination.PaginationParams) ([]*entity.Company, error) {
+func (r *repository) Find(ctx context.Context, paginationParams *pagination.PaginationParams) ([]*entity.Company, error) {
 	var companies []*entity.Company
-	query := r.db.WithContext(ctx).Model(&entity.Company{}).Preload("Brands")
+	query := r.db.WithContext(ctx).Model(&entity.Company{})
 
-	keyword := "%" + args.Keyword + "%"
-	if args.Keyword != "" {
-		query = query.Joins("LEFT JOIN brands ON brands.company_id = companies.id").
-			Where("LOWER(companies.name) LIKE LOWER(?) OR LOWER(brands.name) LIKE LOWER(?)", keyword, keyword)
-	}
-
-	if err := query.Limit(paginationParams.Limit).Offset(paginationParams.Offset).Find(&companies).Error; err != nil {
+	if err := query.Limit(paginationParams.Limit).Offset(paginationParams.Offset).Order("name asc").Find(&companies).Error; err != nil {
 		return nil, err
 	}
 
