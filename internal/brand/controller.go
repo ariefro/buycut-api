@@ -29,7 +29,7 @@ func NewController(service Service, companyService company.Service) Controller {
 }
 
 type getBrandByKeywordRequest struct {
-	Keyword string `json:"keyword"`
+	Keyword string `json:"keyword" validate:"min(3)~Silakan masukkan setidaknya 3 karakter untuk melakukan pencarian"`
 }
 
 type createBrandsRequest struct {
@@ -128,6 +128,11 @@ func (ctrl *controller) FindAll(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(res)
 	}
 
+	if err := validator.ValidateStruct(request); err != nil {
+		response := helper.ResponseFailed(err.Error())
+		return c.Status(fiber.StatusBadRequest).JSON(response)
+	}
+
 	count, err := ctrl.service.CountAll(c.Context(), &request)
 	if err != nil {
 		return helper.GenerateErrorResponse(c, err.Error())
@@ -144,8 +149,10 @@ func (ctrl *controller) FindAll(c *fiber.Ctx) error {
 		return helper.GenerateErrorResponse(c, err.Error())
 	}
 
-	// pages limit for query companies and brands
+	// adjust pages data
 	pages.Limit = pages.Limit * 2
+	pages.LastPage = (int(count) + pages.Limit - 1) / pages.Limit
+
 	res := helper.ResponseSuccessWithPagination("Berhasil memuat daftar merek yang diboikot", results, pages)
 	return c.Status(fiber.StatusOK).JSON(res)
 }
