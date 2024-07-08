@@ -71,7 +71,7 @@ func (r *repository) Find(ctx context.Context, paginationParams *pagination.Pagi
 
 func (r *repository) FindOneByID(ctx context.Context, companyID uint) (*entity.Company, error) {
 	var company *entity.Company
-	if err := r.db.WithContext(ctx).Preload("Brands").First(&company, "id = ?", companyID).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("Brands").Preload("Brands.Company").First(&company, "id = ?", companyID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New(common.CompanyNotFound)
 		}
