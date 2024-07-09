@@ -18,7 +18,7 @@ func Trigger() {
 
 	// Initialize the scheduler with the time zone location
 	scd := gocron.NewScheduler(jakartaTime)
-	_, _ = scd.Every(10).Minute().Do(func() {
+	_, _ = scd.Every(5).Minute().Do(func() {
 		log.Println("OK")
 	})
 	scd.StartAsync()
