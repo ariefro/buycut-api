@@ -1,6 +1,7 @@
 package company
 
 import (
+	"context"
 	"mime/multipart"
 
 	"github.com/ariefro/buycut-api/internal/entity"
@@ -14,6 +15,7 @@ type Controller interface {
 	Create(c *fiber.Ctx) error
 	Find(c *fiber.Ctx) error
 	FindOneByID(c *fiber.Ctx) error
+	FindOneDummy(context.Context) error
 	Update(c *fiber.Ctx) error
 	Delete(c *fiber.Ctx) error
 }
@@ -115,6 +117,15 @@ func (ctrl *controller) FindOneByID(c *fiber.Ctx) error {
 
 	res := helper.ResponseSuccess("Merek ini masuk dalam daftar boikot!", company)
 	return c.Status(fiber.StatusOK).JSON(res)
+}
+
+func (ctrl *controller) FindOneDummy(ctx context.Context) error {
+	_, err := ctrl.service.FindOneByID(ctx, 1)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (ctrl *controller) Update(c *fiber.Ctx) error {
