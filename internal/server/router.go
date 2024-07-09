@@ -40,5 +40,5 @@ func setupRouter(
 	brandsApi.Post("/search", brandController.FindByKeyword)
 
 	// Cron Trigger
-	cronjobs.Trigger()
+	cronjobs.Trigger(companyController)
 }
