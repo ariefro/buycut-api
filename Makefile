@@ -13,11 +13,11 @@ dbstop: ## stop the database server
 
 .PHONY: createdb
 createdb: ## create the database
-	docker exec -it ${CONTAINER_NAME} createdb --username=${POSTGRES_USER} ${POSTGRES_DATABASE}
+	docker exec -it buycut-api-postgres-1 createdb --username=${POSTGRES_USER} ${POSTGRES_DATABASE}
 
 .PHONY: dropdb
 dropdb: ## delete the database
-	docker exec -it ${CONTAINER_NAME} dropdb ${POSTGRES_DATABASE} -U ${POSTGRES_USER} 
+	docker exec -it buycut-api-postgres-1 dropdb ${POSTGRES_DATABASE} -U ${POSTGRES_USER} 
 
 .PHONY: injection
 injection: ## generate dependency injection code using Wire
