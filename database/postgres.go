@@ -6,7 +6,6 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 
 	"github.com/ariefro/buycut-api/config"
 	log "github.com/sirupsen/logrus"
@@ -20,12 +19,10 @@ func NewConnectPostgres(config *config.Config) *gorm.DB {
 		" port=" + config.PostgresPort +
 		" sslmode=disable Timezone=Asia/Jakarta"
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger:                 logger.Default.LogMode((logger.Info)),
-		SkipDefaultTransaction: true,
-		PrepareStmt:            true,
-		TranslateError:         true,
-	})
+	db, err := gorm.Open(postgres.New(postgres.Config{
+		DSN:                  dsn,
+		PreferSimpleProtocol: true,
+	}))
 	if err != nil {
 		log.Error("cannot connect to database: ", err.Error())
 		os.Exit(2)
